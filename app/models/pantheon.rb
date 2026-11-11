@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class Pantheon < ApplicationRecord
+  has_many :gods, dependent: :destroy
+
   normalizes :name, with: ->(value) { value.to_s.squish }
   normalizes :description, with: ->(value) { value.to_s.strip }
 

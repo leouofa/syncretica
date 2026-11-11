@@ -1,5 +1,10 @@
-<div id="populate_controls" class="flex flex-col items-start sm:items-end gap-3">
-  <%= button_to populate_pantheons_path,
+<% target_id = local_assigns.fetch(:target_id, "populate_controls") %>
+<% action_path = local_assigns.fetch(:action_path, populate_pantheons_path) %>
+<% idle_label = local_assigns.fetch(:idle_label, "Populate Pantheons") %>
+<% running_label = local_assigns.fetch(:running_label, "Discovering Pantheons...") %>
+
+<div id="<%= target_id %>" class="flex flex-col items-start sm:items-end gap-3">
+  <%= button_to action_path,
                 method: :post,
                 disabled: running,
                 class: [
@@ -11,9 +16,9 @@
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
       </svg>
-      <span>Discovering Pantheons...</span>
+      <span><%= running_label %></span>
     <% else %>
-      <span>Populate Pantheons</span>
+      <span><%= idle_label %></span>
     <% end %>
   <% end %>
 
