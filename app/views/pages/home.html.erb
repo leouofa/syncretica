@@ -1,0 +1,23 @@
+<% content_for :title, "Pantheons | Syncretica" %>
+
+<%= turbo_stream_from PopulatePantheonsJob::STREAM_NAME %>
+
+<div class="w-full max-w-5xl mx-auto space-y-8 pb-16">
+  <header class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between border-b border-slate-200 pb-6">
+    <div>
+      <h1 class="text-3xl font-bold tracking-tight text-slate-900">Pantheons</h1>
+      <p class="mt-2 text-sm text-slate-600">
+        Explore mythological pantheons of gods or ask the discovery agent to populate and update the catalog.
+      </p>
+    </div>
+
+    <div class="shrink-0">
+      <%= render "pages/populate_controls",
+                 running: false,
+                 status_message: notice,
+                 status_kind: (notice.present? ? :info : nil) %>
+    </div>
+  </header>
+
+  <%= render "pages/pantheons_list", pantheons: @pantheons %>
+</div>
