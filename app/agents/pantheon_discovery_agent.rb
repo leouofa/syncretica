@@ -19,15 +19,8 @@ class PantheonDiscoveryAgent < ApplicationAgent
       Identify all major historical, classical, and indigenous pantheons of gods across world mythologies.
       For each pantheon, provide its canonical name and a concise, informative description covering its cultural or geographic origin, key themes, and notable deities.
       #{existing_clause}
+      Respond ONLY with valid JSON matching this exact structure (no markdown fences or commentary):
+      {"pantheons":[{"name":"Greek","description":"..."}]}
     INSTRUCTIONS
-  end
-
-  schema do
-    array :pantheons, description: "Comprehensive list of mythological pantheons of gods" do
-      object do
-        string :name, description: "Canonical name of the pantheon (e.g. 'Greek', 'Norse', 'Egyptian')"
-        string :description, description: "Concise overview of the pantheon's cultural origin, themes, and major deities"
-      end
-    end
   end
 end

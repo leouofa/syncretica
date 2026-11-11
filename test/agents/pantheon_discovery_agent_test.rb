@@ -23,16 +23,15 @@ class PantheonDiscoveryAgentTest < ActiveSupport::TestCase
     end
   end
 
-  test "create! configures schema and includes existing names in system instructions" do
+  test "create! includes existing names and JSON instructions without response_format schema" do
     chat = PantheonDiscoveryAgent.create!(existing_names: [ "Greek", "Norse" ])
 
     assert chat.persisted?
+    assert_nil chat.schema
+
     system_message = chat.messages.find_by!(role: "system")
     assert_includes system_message.content, "Greek, Norse"
     assert_includes system_message.content, "comparative mythology scholar"
-
-    schema_props = chat.schema.dig(:schema, :properties) || chat.schema[:properties]
-    assert_not_nil schema_props
-    assert_includes schema_props.keys, :pantheons
+    assert_includes system_message.content, '"pantheons"'
   end
 end

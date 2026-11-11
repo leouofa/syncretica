@@ -28,12 +28,18 @@ class PopulatePantheonsJobTest < ActiveSupport::TestCase
     Pantheon.create!(name: "Greek", description: "Initial Greek description")
 
     fake_response = OpenStruct.new(
-      parsed: {
-        "pantheons" => [
-          { "name" => "Greek", "description" => "Deities of Mount Olympus led by Zeus." },
-          { "name" => "Egyptian", "description" => "Ancient Nile deities including Ra, Isis, and Osiris." }
-        ]
-      }
+      parsed: nil,
+      content: <<~TEXT
+        <think>Let me list major pantheons.</think>
+        ```json
+        {
+          "pantheons": [
+            { "name": "Greek", "description": "Deities of Mount Olympus led by Zeus." },
+            { "name": "Egyptian", "description": "Ancient Nile deities including Ra, Isis, and Osiris." }
+          ]
+        }
+        ```
+      TEXT
     )
 
     received_existing_names = nil
@@ -64,6 +70,20 @@ class PopulatePantheonsJobTest < ActiveSupport::TestCase
         assert_nothing_raised { PopulatePantheonsJob.perform_now }
       end
     end
+  end
+
+  test "perform broadcasts error status when LLM returns invalid non-JSON text" do
+    fake_response = OpenStruct.new(parsed: nil, content: "Sorry, I cannot help with that.")
+    fake_chat = Object.new
+    fake_chat.define_singleton_method(:ask) { |_prompt| fake_response }
+
+    with_stubbed_agent_create(->(**) { fake_chat }) do
+      assert_broadcasts(PopulatePantheonsJob::STREAM_NAME, 2) do
+        assert_nothing_raised { PopulatePantheonsJob.perform_now }
+      end
+    end
+
+    assert_equal 0, Pantheon.count
   end
 
   private
