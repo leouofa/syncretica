@@ -16,8 +16,13 @@ Rails.application.routes.draw do
 
   # Defines the root path route ("/")
   root "pages#home"
+  get "gods" => "pages#gods", as: :gods
 
   resources :pantheons, only: [] do
+    post :populate, on: :collection
+  end
+
+  resources :gods, only: [] do
     post :populate, on: :collection
   end
 end

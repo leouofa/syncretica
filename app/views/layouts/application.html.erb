@@ -23,8 +23,30 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body>
-    <main class="container mx-auto mt-28 px-5 flex">
+  <body class="bg-slate-50/40 text-slate-900">
+    <header class="border-b border-slate-200 bg-white">
+      <nav class="container mx-auto px-5" aria-label="Primary">
+        <div class="mx-auto flex h-14 max-w-6xl items-center justify-between">
+          <%= link_to "Syncretica", root_path, class: "text-base font-bold tracking-tight text-slate-900" %>
+          <div class="flex items-center gap-1">
+            <%= link_to "Pantheons",
+                        root_path,
+                        class: [
+                          "rounded-md px-3 py-1.5 text-sm font-medium transition",
+                          current_page?(root_path) ? "bg-indigo-50 text-indigo-700" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                        ].join(" ") %>
+            <%= link_to "Gods",
+                        gods_path,
+                        class: [
+                          "rounded-md px-3 py-1.5 text-sm font-medium transition",
+                          current_page?(gods_path) ? "bg-indigo-50 text-indigo-700" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                        ].join(" ") %>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container mx-auto mt-10 px-5 flex">
       <%= yield %>
     </main>
   </body>

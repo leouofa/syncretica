@@ -1,0 +1,73 @@
+<div id="gods_list">
+  <% if pantheon_groups.any? %>
+    <div class="mb-4 text-sm font-medium text-slate-500">
+      <%= pluralize(total_gods_count, "god") %> cataloged across <%= pluralize(pantheon_groups.size, "pantheon") %>
+    </div>
+
+    <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
+      <table class="min-w-[44rem] w-full table-fixed divide-y divide-slate-200 text-left">
+        <thead class="bg-slate-50">
+          <tr>
+            <th scope="col" class="w-1/6 px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-600">
+              God
+            </th>
+            <th scope="col" class="w-5/12 px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-600">
+              Description
+            </th>
+            <th scope="col" class="w-5/12 px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-600">
+              Themes
+            </th>
+          </tr>
+        </thead>
+
+        <% pantheon_groups.each do |pantheon, gods| %>
+          <tbody class="divide-y divide-slate-200">
+            <tr class="bg-slate-100/80 border-y border-slate-200">
+              <th colspan="3" scope="colgroup" class="px-5 py-3 text-left">
+                <div class="flex items-center justify-between gap-3">
+                  <span class="text-sm font-semibold text-slate-900"><%= pantheon.name %></span>
+                  <span class="text-xs font-medium text-slate-500"><%= pluralize(gods.size, "god") %></span>
+                </div>
+              </th>
+            </tr>
+
+            <% gods.each do |god| %>
+              <tr class="align-top transition hover:bg-slate-50/70">
+                <td class="px-5 py-4 text-sm font-semibold text-slate-900">
+                  <%= god.name %>
+                </td>
+                <td class="px-5 py-4 text-sm leading-relaxed text-slate-600">
+                  <%= god.description %>
+                </td>
+                <td class="px-5 py-4">
+                  <% if god.themes.any? %>
+                    <ul class="flex flex-wrap gap-1.5" aria-label="Themes for <%= god.name %>">
+                      <% god.themes.each do |theme| %>
+                        <li class="inline-flex items-center rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-700">
+                          <%= theme %>
+                        </li>
+                      <% end %>
+                    </ul>
+                  <% else %>
+                    <span class="text-xs text-slate-400">No themes</span>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        <% end %>
+      </table>
+    </div>
+  <% else %>
+    <div class="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-10 text-center">
+      <h2 class="text-base font-semibold text-slate-900">No gods yet</h2>
+      <p class="mt-1 text-sm text-slate-600">
+        <% if pantheons_count.zero? %>
+          First <%= link_to "populate pantheons", root_path, class: "font-medium text-indigo-600 hover:text-indigo-500 underline" %>, then click <span class="font-medium text-slate-800">Populate Gods</span> above to discover deities for each pantheon.
+        <% else %>
+          Click <span class="font-medium text-slate-800">Populate Gods</span> above to have the agent ask the LLM to find and populate deities across your <%= pluralize(pantheons_count, "pantheon") %>.
+        <% end %>
+      </p>
+    </div>
+  <% end %>
+</div>
