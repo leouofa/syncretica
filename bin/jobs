@@ -1,6 +1,5 @@
 #!/usr/bin/env ruby
+require "rubygems"
+require "bundler/setup"
 
-require_relative "../config/environment"
-require "solid_queue/cli"
-
-SolidQueue::Cli.start(ARGV)
+load Gem.bin_path("sidekiq", "sidekiq")
