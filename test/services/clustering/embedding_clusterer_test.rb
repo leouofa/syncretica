@@ -25,9 +25,9 @@ class EmbeddingClustererTest < ActiveSupport::TestCase
     v2 = Array.new(1024, 0.1) # pair
     v3 = Array.new(1024, 0.5) # singleton
 
-    God.create!(pantheon: pantheon, name: "Core God 1", description: "D1", themes: ["sky"], embedding: v1)
-    God.create!(pantheon: pantheon, name: "Core God 2", description: "D2", themes: ["sky"], embedding: v2)
-    God.create!(pantheon: pantheon, name: "Isolated God 3", description: "D3", themes: ["underworld"], embedding: v3)
+    God.create!(pantheon: pantheon, name: "Core God 1", description: "D1", themes: [ "sky" ], embedding: v1)
+    God.create!(pantheon: pantheon, name: "Core God 2", description: "D2", themes: [ "sky" ], embedding: v2)
+    God.create!(pantheon: pantheon, name: "Isolated God 3", description: "D3", themes: [ "underworld" ], embedding: v3)
 
     result = Clustering::EmbeddingClusterer.call(God, level: 5, full_coverage: true, force: true)
     assert_equal 0, result.singletons_count
@@ -40,9 +40,9 @@ class EmbeddingClustererTest < ActiveSupport::TestCase
     v2 = Array.new(1024, 0.1) # identical to v1, distance = 0
     v3 = Array.new(1024, -0.1) # opposite vector, distance ~ 2.0
 
-    g1 = God.create!(pantheon: pantheon, name: "God 1", description: "D1", themes: ["sky"], embedding: v1)
-    g2 = God.create!(pantheon: pantheon, name: "God 2", description: "D2", themes: ["sky"], embedding: v2)
-    g3 = God.create!(pantheon: pantheon, name: "God 3", description: "D3", themes: ["underworld"], embedding: v3)
+    g1 = God.create!(pantheon: pantheon, name: "God 1", description: "D1", themes: [ "sky" ], embedding: v1)
+    g2 = God.create!(pantheon: pantheon, name: "God 2", description: "D2", themes: [ "sky" ], embedding: v2)
+    g3 = God.create!(pantheon: pantheon, name: "God 3", description: "D3", themes: [ "underworld" ], embedding: v3)
 
     result = Clustering::EmbeddingClusterer.call(God, level: 5, force: true)
     assert_operator result.total_embedded_count, :>=, 3

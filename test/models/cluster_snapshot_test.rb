@@ -28,7 +28,7 @@ class ClusterSnapshotTest < ActiveSupport::TestCase
 
   test "creates snapshot with groups and memberships and cascades destruction" do
     pantheon = Pantheon.create!(name: "Test Greek", description: "Greek test pantheon")
-    god = God.create!(pantheon: pantheon, name: "Test Zeus", description: "Sky god", themes: ["sky", "thunder"])
+    god = God.create!(pantheon: pantheon, name: "Test Zeus", description: "Sky god", themes: [ "sky", "thunder" ])
 
     snapshot = ClusterSnapshot.create!(
       target_type: "God",
@@ -41,7 +41,7 @@ class ClusterSnapshotTest < ActiveSupport::TestCase
 
     group = snapshot.cluster_groups.create!(
       name: "Sky & Thunder Domain",
-      shared_themes: ["Sky", "Thunder"],
+      shared_themes: [ "Sky", "Thunder" ],
       size: 1
     )
 

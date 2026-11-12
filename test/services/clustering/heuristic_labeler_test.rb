@@ -14,7 +14,7 @@ class HeuristicLabelerTest < ActiveSupport::TestCase
     g1 = God.create!(pantheon: pantheon, name: "Zeus Alpha", description: "Sky", themes: %w[thunder sky storms])
     g2 = God.create!(pantheon: pantheon, name: "Jupiter Beta", description: "Sky", themes: %w[thunder sky lightning])
 
-    result = Clustering::HeuristicLabeler.label([g1, g2])
+    result = Clustering::HeuristicLabeler.label([ g1, g2 ])
     assert_includes result[:shared_themes], "Thunder"
     assert_includes result[:shared_themes], "Sky"
     assert_includes result[:title], "Domain"
@@ -22,10 +22,10 @@ class HeuristicLabelerTest < ActiveSupport::TestCase
 
   test "extracts shared themes for myths" do
     pantheon = Pantheon.create!(name: "Test Pantheon 2", description: "Test")
-    god = God.create!(pantheon: pantheon, name: "Odin Gamma", description: "Allfather", themes: ["wisdom"])
+    god = God.create!(pantheon: pantheon, name: "Odin Gamma", description: "Allfather", themes: [ "wisdom" ])
     myth = Myth.create!(god: god, themes: { "Creation" => "Formed the cosmos", "Wisdom" => "Sacrificed eye" })
 
-    result = Clustering::HeuristicLabeler.label([myth])
+    result = Clustering::HeuristicLabeler.label([ myth ])
     assert_includes result[:shared_themes], "Creation"
     assert_includes result[:shared_themes], "Wisdom"
   end
