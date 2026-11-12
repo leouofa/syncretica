@@ -1,0 +1,82 @@
+<% target_id = GenerateAllEmbeddingsJob.target_id_for(model_type) %>
+<% running = local_assigns.fetch(:running, false) %>
+<% running_mode = local_assigns[:running_mode] %>
+<% status_message = local_assigns[:status_message] %>
+<% status_kind = local_assigns[:status_kind] %>
+<% total_count = stats.fetch(:total) %>
+<% embedded_count = stats.fetch(:embedded) %>
+<% missing_count = [ total_count - embedded_count, 0 ].max %>
+<% plural_title = model_type.pluralize %>
+
+<section id="<%= target_id %>" class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+  <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <div class="flex items-center gap-2.5">
+        <h2 class="text-base font-semibold text-slate-900"><%= plural_title %> Embeddings</h2>
+        <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700">
+          <%= embedded_count %> / <%= total_count %> embedded
+        </span>
+      </div>
+      <p class="mt-1 text-xs text-slate-500">
+        <% if total_count.zero? %>
+          No <%= plural_title.downcase %> cataloged yet.
+        <% elsif missing_count.zero? %>
+          All <%= plural_title.downcase %> have generated embeddings.
+        <% else %>
+          <%= pluralize(missing_count, model_type.downcase) %> missing embeddings.
+        <% end %>
+      </p>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2.5 shrink-0">
+      <% missing_disabled = running || missing_count.zero? %>
+      <%= button_to generate_embeddings_settings_path(model_type: model_type, only_missing: true),
+                    method: :post,
+                    disabled: missing_disabled,
+                    class: [
+                      "inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-sm transition",
+                      missing_disabled ? "bg-indigo-300 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-500 cursor-pointer"
+                    ].join(" ") do %>
+        <% if running && running_mode == :missing %>
+          <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+          </svg>
+          <span>Generating Missing...</span>
+        <% else %>
+          <span>Generate Missing</span>
+        <% end %>
+      <% end %>
+
+      <% all_disabled = running || total_count.zero? %>
+      <%= button_to generate_embeddings_settings_path(model_type: model_type, only_missing: false),
+                    method: :post,
+                    disabled: all_disabled,
+                    class: [
+                      "inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold shadow-sm transition",
+                      all_disabled ? "border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed" : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50 cursor-pointer"
+                    ].join(" ") do %>
+        <% if running && running_mode == :all %>
+          <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+          </svg>
+          <span>Regenerating All...</span>
+        <% else %>
+          <span>Regenerate All</span>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+
+  <% if status_message.present? %>
+    <% banner_classes = case status_kind&.to_sym
+                        when :success then "bg-emerald-50 text-emerald-800 border-emerald-200"
+                        when :error then "bg-rose-50 text-rose-800 border-rose-200"
+                        else "bg-indigo-50 text-indigo-800 border-indigo-200"
+                        end %>
+    <p role="status" class="rounded-md border px-3 py-2 text-xs font-medium <%= banner_classes %>">
+      <%= status_message %>
+    </p>
+  <% end %>
+</section>

@@ -32,4 +32,8 @@ Rails.application.routes.draw do
     post :populate, on: :collection
     post :generate_embedding, on: :member
   end
+
+  resource :settings, only: [ :show ] do
+    post :generate_embeddings, on: :collection
+  end
 end

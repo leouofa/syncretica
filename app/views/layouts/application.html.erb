@@ -47,6 +47,12 @@
                           "rounded-md px-3 py-1.5 text-sm font-medium transition",
                           current_page?(myths_path) ? "bg-indigo-50 text-indigo-700" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                         ].join(" ") %>
+            <%= link_to "Settings",
+                        settings_path,
+                        class: [
+                          "rounded-md px-3 py-1.5 text-sm font-medium transition",
+                          current_page?(settings_path) ? "bg-indigo-50 text-indigo-700" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                        ].join(" ") %>
           </div>
         </div>
       </nav>
