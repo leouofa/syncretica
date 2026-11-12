@@ -35,6 +35,19 @@ class GodsControllerTest < ActionDispatch::IntegrationTest
     assert_match "Not generated", response.body
   end
 
+  test "show with Turbo-Frame cluster_modal renders modal partial" do
+    greek = Pantheon.create!(name: "Greek", description: "Olympian deities.")
+    god = God.create!(pantheon: greek, name: "Zeus", description: "King of Olympus.", themes: [ "sky" ])
+
+    get god_url(god), headers: { "Turbo-Frame" => "cluster_modal" }
+
+    assert_response :success
+    assert_select "turbo-frame#cluster_modal"
+    assert_match "Zeus", response.body
+    assert_match "Back to Clusters", response.body
+    assert_match "Open Full God Page", response.body
+  end
+
   test "generate_embedding enqueues GenerateEmbeddingJob and responds with turbo stream" do
     greek = Pantheon.create!(name: "Greek", description: "Olympian deities.")
     god = God.create!(pantheon: greek, name: "Zeus", description: "King of Olympus.")

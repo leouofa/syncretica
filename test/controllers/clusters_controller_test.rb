@@ -34,6 +34,33 @@ class ClustersControllerTest < ActionDispatch::IntegrationTest
     assert_select "span", text: /100% Clustered/
   end
 
+  test "GET /clusters renders entity links targeting cluster_modal frame" do
+    pantheon = Pantheon.create!(name: "Olympian", description: "Greek gods")
+    v = Array.new(1024, 0.1)
+    God.create!(pantheon: pantheon, name: "Zeus Modal Test", description: "King of gods", embedding: v)
+    God.create!(pantheon: pantheon, name: "Hera Modal Test", description: "Queen of gods", embedding: v)
+
+    get clusters_path(tab: "gods", level: 5)
+    assert_response :success
+    assert_select "turbo-frame#cluster_modal"
+    assert_select "a[data-turbo-frame='cluster_modal']", text: "Zeus Modal Test"
+    assert_select "a[data-turbo-frame='cluster_modal']", text: "View details →"
+  end
+
+  test "GET /clusters with myths tab renders myth links targeting cluster_modal frame" do
+    pantheon = Pantheon.create!(name: "Norse", description: "Aesir gods")
+    v = Array.new(1024, 0.1)
+    god1 = God.create!(pantheon: pantheon, name: "Odin Modal Test", description: "Allfather", embedding: v)
+    god2 = God.create!(pantheon: pantheon, name: "Thor Modal Test", description: "Thunderer", embedding: v)
+    Myth.create!(god: god1, themes: { "Wisdom" => "Eye sacrifice." }, embedding: v)
+    Myth.create!(god: god2, themes: { "Storms" => "Mjolnir thunder." }, embedding: v)
+
+    get clusters_path(tab: "myths", level: 5)
+    assert_response :success
+    assert_select "a[data-turbo-frame='cluster_modal']", text: "Odin Modal Test Myth"
+    assert_select "a[data-turbo-frame='cluster_modal']", text: "View details →"
+  end
+
   test "POST /clusters/snapshot creates snapshot and redirects to it" do
     pantheon = Pantheon.create!(name: "Snapshot Test Pantheon", description: "Desc")
     v = Array.new(1024, 0.2)
