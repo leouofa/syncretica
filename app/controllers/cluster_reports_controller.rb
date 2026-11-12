@@ -54,12 +54,16 @@ class ClusterReportsController < ApplicationController
     batch_size = ClusterReport::DEFAULT_BATCH_SIZE if batch_size <= 0
     batch_size = batch_size.clamp(ClusterReport::BATCH_SIZE_RANGE)
 
-    @deep_report = @report.cluster_snapshot.cluster_reports.create!(
-      prompt: @report.prompt,
-      status: ClusterReport::STATUS_PENDING,
-      is_detailed: true,
-      batch_size: batch_size
-    )
+    ClusterReport.transaction do
+      @deep_report = @report.cluster_snapshot.cluster_reports.create!(
+        prompt: @report.prompt,
+        status: ClusterReport::STATUS_PENDING,
+        is_detailed: true,
+        batch_size: batch_size,
+        parent_report: @report
+      )
+      @deep_report.copy_summaries_from!(@report)
+    end
 
     GenerateClusterReportJob.perform_later(@deep_report.id)
 

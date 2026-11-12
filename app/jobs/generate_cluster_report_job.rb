@@ -14,15 +14,23 @@ class GenerateClusterReportJob < ApplicationJob
     snapshot = report.cluster_snapshot
     groups = snapshot.cluster_groups.by_size.includes(cluster_memberships: eager_associations(snapshot.target_type)).to_a
 
+    existing_summaries_count = report.cluster_report_summaries.count
+    initial_phase = if existing_summaries_count >= groups.size
+      report.detailed? ? ClusterReport::PHASE_AGGREGATING_BATCHES : ClusterReport::PHASE_SYNTHESIZING_REPORT
+    else
+      ClusterReport::PHASE_SUMMARIZING_CLUSTERS
+    end
+
     report.mark_running!(
-      phase: ClusterReport::PHASE_SUMMARIZING_CLUSTERS,
+      phase: initial_phase,
       total_clusters: groups.size,
       total_batches: total_batches_for(report, groups)
     )
+    report.update!(summarized_clusters_count: existing_summaries_count) if report.summarized_clusters_count != existing_summaries_count
     broadcast_report_update(report)
 
     # Phase 1: Map - Prompt-guided summarization for each cluster group
-    summarize_clusters(report, snapshot, groups)
+    summarize_clusters(report, snapshot, groups) if existing_summaries_count < groups.size
 
     if report.detailed?
       # Phase 2: Aggregation - Batch the cluster summaries into mid-level analyses

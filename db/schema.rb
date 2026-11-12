@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_12_190000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_12_200000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -107,9 +107,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_12_190000) do
     t.integer "batch_size"
     t.integer "total_batches_count", default: 0, null: false
     t.integer "aggregated_batches_count", default: 0, null: false
+    t.bigint "parent_report_id"
     t.index ["chat_id"], name: "index_cluster_reports_on_chat_id"
     t.index ["cluster_snapshot_id", "created_at"], name: "index_cluster_reports_on_cluster_snapshot_id_and_created_at"
     t.index ["cluster_snapshot_id"], name: "index_cluster_reports_on_cluster_snapshot_id"
+    t.index ["parent_report_id"], name: "index_cluster_reports_on_parent_report_id"
     t.index ["status"], name: "index_cluster_reports_on_status"
   end
 
@@ -371,6 +373,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_12_190000) do
   add_foreign_key "cluster_report_summaries", "cluster_groups", on_delete: :cascade
   add_foreign_key "cluster_report_summaries", "cluster_reports", on_delete: :cascade
   add_foreign_key "cluster_reports", "chats", on_delete: :nullify
+  add_foreign_key "cluster_reports", "cluster_reports", column: "parent_report_id", on_delete: :nullify
   add_foreign_key "cluster_reports", "cluster_snapshots", on_delete: :cascade
   add_foreign_key "cluster_sub_reports", "chats", on_delete: :nullify
   add_foreign_key "cluster_sub_reports", "cluster_reports", on_delete: :cascade

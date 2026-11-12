@@ -75,6 +75,54 @@ class GenerateClusterReportJobTest < ActiveSupport::TestCase
     assert_includes @report.error_message, "Ollama connection refused"
   end
 
+  test "skips cluster group summary agent when summaries already exist for all clusters" do
+    @report.update!(is_detailed: true, batch_size: 5)
+    @report.cluster_report_summaries.create!(
+      cluster_group: @group,
+      position: 1,
+      content: "Pre-existing cluster analysis"
+    )
+
+    fake_batch_response = OpenStruct.new(content: "Batch aggregated analysis")
+    fake_batch_chat = Object.new
+    fake_batch_chat.define_singleton_method(:ask) { |_prompt| fake_batch_response }
+
+    fake_deep_response = OpenStruct.new(content: "# Deep Archetype Patterns\n\nDeep narrative.")
+    fake_deep_chat = Object.new
+    fake_deep_chat.define_singleton_method(:ask) { |_prompt| fake_deep_response }
+
+    cluster_agent_called = false
+    c_singleton = ClusterGroupSummaryAgent.singleton_class
+    c_original = ClusterGroupSummaryAgent.method(:create!)
+    c_singleton.define_method(:create!) do |**|
+      cluster_agent_called = true
+      flunk("ClusterGroupSummaryAgent should not be called when summaries already exist")
+    end
+
+    b_singleton = ClusterBatchSummaryAgent.singleton_class
+    b_original = ClusterBatchSummaryAgent.method(:create!)
+    b_singleton.define_method(:create!) { |**| fake_batch_chat }
+
+    d_singleton = DeepSynthesisReportAgent.singleton_class
+    d_original = DeepSynthesisReportAgent.method(:create!)
+    d_singleton.define_method(:create!) { |**| fake_deep_chat }
+
+    begin
+      GenerateClusterReportJob.perform_now(@report.id)
+    ensure
+      c_singleton.define_method(:create!, c_original)
+      b_singleton.define_method(:create!, b_original)
+      d_singleton.define_method(:create!, d_original)
+    end
+
+    @report.reload
+    assert_not cluster_agent_called
+    assert @report.completed?
+    assert_equal "Deep Archetype Patterns", @report.title
+    assert_equal 1, @report.cluster_sub_reports.count
+    assert_equal "Batch aggregated analysis", @report.cluster_sub_reports.first.content
+  end
+
   private
 
   def with_stubbed_agent_creates(cluster_chat, report_chat)

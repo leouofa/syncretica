@@ -1,4 +1,5 @@
 ENV["RAILS_ENV"] ||= "test"
+ENV["OLLAMA_MODEL"] ||= "Qwen3.6-35B-A3B-NVFP4"
 require_relative "../config/environment"
 require "rails/test_help"
 
