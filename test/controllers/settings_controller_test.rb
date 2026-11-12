@@ -5,6 +5,21 @@ require "test_helper"
 class SettingsControllerTest < ActionDispatch::IntegrationTest
   include ActiveJob::TestHelper
 
+  setup do
+    @model_id = ENV["OLLAMA_MODEL"].presence || "Qwen3.6-35B-A3B-NVFP4"
+    @previous_model = ENV["OLLAMA_MODEL"]
+    ENV["OLLAMA_MODEL"] = @model_id
+    Llm::ModelRegistry.ensure_configured_model!(model_id: @model_id)
+  end
+
+  teardown do
+    if @previous_model.nil?
+      ENV.delete("OLLAMA_MODEL")
+    else
+      ENV["OLLAMA_MODEL"] = @previous_model
+    end
+  end
+
   test "show renders settings page with nav link, config, coverage, and bulk buttons" do
     greek = Pantheon.create!(name: "Greek", description: "Olympian deities.")
     zeus = God.create!(
