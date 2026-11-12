@@ -60,4 +60,33 @@ class ClusterReportTest < ActiveSupport::TestCase
     end
     assert_nil ClusterReport.find_by(id: report.id)
   end
+
+  test "detailed reports track batching and progress" do
+    report = @snapshot.cluster_reports.create!(prompt: "Deep dive", is_detailed: true, batch_size: 5)
+    assert report.detailed?
+    assert_not @snapshot.cluster_reports.create!(prompt: "Standard").detailed?
+
+    report.mark_running!(
+      phase: ClusterReport::PHASE_AGGREGATING_BATCHES,
+      total_clusters: 10,
+      total_batches: 2
+    )
+    assert_equal 2, report.total_batches_count
+    assert_includes report.phase_description, "Aggregating batch 0 of 2"
+
+    report.update!(aggregated_batches_count: 1)
+    assert_equal 80, report.progress_percentage
+  end
+
+  test "non-detailed reports keep the two-phase progress semantics" do
+    report = @snapshot.cluster_reports.create!(prompt: "Standard")
+    report.mark_running!(total_clusters: 4)
+    report.update!(summarized_clusters_count: 2)
+    assert_equal 35, report.progress_percentage
+    assert_includes report.phase_description, "Phase 1 of 2"
+
+    report.update!(phase: ClusterReport::PHASE_SYNTHESIZING_REPORT)
+    assert_equal 92, report.progress_percentage
+    assert_includes report.phase_description, "Phase 2 of 2"
+  end
 end

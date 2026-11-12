@@ -41,7 +41,9 @@ Rails.application.routes.draw do
     resources :cluster_reports, only: [ :create ]
   end
 
-  resources :cluster_reports, path: "reports", only: [ :index, :show, :destroy ]
+  resources :cluster_reports, path: "reports", only: [ :index, :show, :destroy ] do
+    post :deep_synthesis, on: :member
+  end
 
   resource :settings, only: [ :show ] do
     post :generate_embeddings, on: :collection
