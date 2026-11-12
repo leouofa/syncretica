@@ -14,4 +14,3 @@ module ApplicationHelper
     ], attributes: %w[href title class id target rel])
   end
 end
-
