@@ -54,4 +54,10 @@ class SettingsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :unprocessable_entity
   end
+
+  test "update_context_window updates tokens and redirects with notice" do
+    patch update_context_window_settings_url, params: { context_window: 131_072 }
+    assert_redirected_to settings_url
+    assert_equal "LLM Context Window updated to 131,072 tokens.", flash[:notice]
+  end
 end

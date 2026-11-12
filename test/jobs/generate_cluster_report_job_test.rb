@@ -19,9 +19,10 @@ class GenerateClusterReportJobTest < ActiveSupport::TestCase
       level: 5,
       distance_threshold: 0.20,
       title: "Solar Pantheon",
-      clusters_count: 0,
-      items_count: 0
+      clusters_count: 1,
+      items_count: 1
     )
+    @group = @snapshot.cluster_groups.create!(name: "Solar Realm", shared_themes: [ "sun" ], size: 1)
     @report = @snapshot.cluster_reports.create!(prompt: "Find patterns across myths or gods")
   end
 
@@ -33,45 +34,61 @@ class GenerateClusterReportJobTest < ActiveSupport::TestCase
   end
 
   test "performs report generation and marks completed" do
-    fake_response = OpenStruct.new(
+    fake_cluster_response = OpenStruct.new(
+      content: "Cluster 1 represents sovereignty over celestial realms and civic law."
+    )
+    fake_report_response = OpenStruct.new(
       content: "# Patterns in the Solar Realm\n\nExecutive Summary: Solar gods represent celestial sovereignty."
     )
 
-    fake_chat = Object.new
-    fake_chat.define_singleton_method(:ask) { |_prompt| fake_response }
+    fake_cluster_chat = Object.new
+    fake_cluster_chat.define_singleton_method(:ask) { |_prompt| fake_cluster_response }
 
-    with_stubbed_agent_create(->(**) { fake_chat }) do
+    fake_report_chat = Object.new
+    fake_report_chat.define_singleton_method(:ask) { |_prompt| fake_report_response }
+
+    with_stubbed_agent_creates(fake_cluster_chat, fake_report_chat) do
       GenerateClusterReportJob.perform_now(@report.id)
     end
 
     @report.reload
     assert @report.completed?
+    assert_equal "completed", @report.phase
     assert_equal "Patterns in the Solar Realm", @report.title
     assert_includes @report.content, "Executive Summary"
     assert_not_nil @report.completed_at
   end
 
   test "handles error and marks failed" do
-    fake_chat = Object.new
-    fake_chat.define_singleton_method(:ask) { |_prompt| raise "Ollama connection refused" }
+    fake_cluster_chat = Object.new
+    fake_cluster_chat.define_singleton_method(:ask) { |_prompt| raise "Ollama connection refused" }
 
-    with_stubbed_agent_create(->(**) { fake_chat }) do
+    fake_report_chat = Object.new
+
+    with_stubbed_agent_creates(fake_cluster_chat, fake_report_chat) do
       GenerateClusterReportJob.perform_now(@report.id)
     end
 
     @report.reload
     assert @report.failed?
+    assert_equal "failed", @report.phase
     assert_includes @report.error_message, "Ollama connection refused"
   end
 
   private
 
-  def with_stubbed_agent_create(callable)
-    singleton = ClusterReportAgent.singleton_class
-    original = ClusterReportAgent.method(:create!)
-    singleton.define_method(:create!, &callable)
+  def with_stubbed_agent_creates(cluster_chat, report_chat)
+    c_singleton = ClusterGroupSummaryAgent.singleton_class
+    c_original = ClusterGroupSummaryAgent.method(:create!)
+    c_singleton.define_method(:create!) { |**| cluster_chat }
+
+    r_singleton = ClusterReportAgent.singleton_class
+    r_original = ClusterReportAgent.method(:create!)
+    r_singleton.define_method(:create!) { |**| report_chat }
+
     yield
   ensure
-    singleton.define_method(:create!, original)
+    c_singleton.define_method(:create!, c_original)
+    r_singleton.define_method(:create!, r_original)
   end
 end

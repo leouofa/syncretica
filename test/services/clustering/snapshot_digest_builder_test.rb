@@ -48,10 +48,19 @@ class SnapshotDigestBuilderTest < ActiveSupport::TestCase
     group = snapshot.cluster_groups.create!(name: "Cosmic Relics", shared_themes: [ "weapons" ], size: 1)
     group.cluster_memberships.create!(record: myth)
 
-    digest = Clustering::SnapshotDigestBuilder.call(snapshot, max_chars: 5_000)
+    report = snapshot.cluster_reports.create!(prompt: "Analyze relics")
+    report.cluster_report_summaries.create!(
+      cluster_group: group,
+      content: "This cluster focuses on sovereign implements of thunder and power.",
+      position: 1
+    )
+
+    digest = Clustering::SnapshotDigestBuilder.call(snapshot, report: report, max_chars: 5_000)
 
     assert_includes digest, "Target Type: Myth"
     assert_includes digest, "Thor Test Myth (Norse Test)"
     assert_includes digest, "Hammer Retrieval"
+    assert_includes digest, "Prompt-Guided Cluster Analysis:"
+    assert_includes digest, "sovereign implements of thunder and power"
   end
 end

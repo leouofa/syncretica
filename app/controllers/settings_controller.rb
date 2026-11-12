@@ -9,6 +9,21 @@ class SettingsController < ApplicationController
       api_base: Llm::EmbeddingGenerator.configured_api_base,
       dimensions: Llm::EmbeddingGenerator::DIMENSIONS
     }
+    @llm_config = {
+      model: ENV["OLLAMA_MODEL"],
+      api_base: ENV["OLLAMA_API_BASE"],
+      context_window: Llm::ModelRegistry.current_context_window,
+      digest_char_budget: Llm::ModelRegistry.digest_char_budget,
+      presets: Llm::ModelRegistry::CONTEXT_WINDOW_PRESETS
+    }
+  end
+
+  def update_context_window
+    tokens = params[:context_window].to_i
+    Llm::ModelRegistry.update_context_window!(tokens)
+    redirect_to settings_path, notice: "LLM Context Window updated to #{tokens.to_fs(:delimited)} tokens."
+  rescue StandardError => e
+    redirect_to settings_path, alert: "Failed to update context window: #{e.message}"
   end
 
   def generate_embeddings

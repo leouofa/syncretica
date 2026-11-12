@@ -45,5 +45,6 @@ Rails.application.routes.draw do
 
   resource :settings, only: [ :show ] do
     post :generate_embeddings, on: :collection
+    patch :update_context_window, on: :collection
   end
 end

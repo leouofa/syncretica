@@ -9,13 +9,74 @@ class GenerateClusterReportJob < ApplicationJob
     return unless report
     return if report.completed?
 
-    report.mark_running!
-    broadcast_report_update(report)
-
     Llm::ModelRegistry.ensure_configured_model!
 
     snapshot = report.cluster_snapshot
-    digest = Clustering::SnapshotDigestBuilder.call(snapshot)
+    groups = snapshot.cluster_groups.by_size.includes(cluster_memberships: eager_associations(snapshot.target_type)).to_a
+
+    report.mark_running!(
+      phase: ClusterReport::PHASE_SUMMARIZING_CLUSTERS,
+      total_clusters: groups.size
+    )
+    broadcast_report_update(report)
+
+    # Phase 1: Map - Prompt-guided summarization for each cluster group
+    summarize_clusters(report, snapshot, groups)
+
+    # Phase 2: Reduce - Final report synthesis across all cluster analyses
+    synthesize_report(report, snapshot)
+  rescue StandardError => e
+    Rails.logger.error("[GenerateClusterReportJob] Report=#{cluster_report_id} #{e.class}: #{e.message}\n#{e.backtrace.first(8).join("\n")}")
+    report&.mark_failed!(e.message)
+    broadcast_report_update(report) if report
+  end
+
+  private
+
+  def summarize_clusters(report, snapshot, groups)
+    groups.each_with_index do |group, index|
+      # Skip if summary already generated
+      next if report.cluster_report_summaries.exists?(cluster_group_id: group.id)
+
+      group_detail = Clustering::SnapshotDigestBuilder.format_full_group_detail(
+        group,
+        target_type: snapshot.target_type
+      )
+
+      chat = ClusterGroupSummaryAgent.create!(
+        report_prompt: report.prompt,
+        snapshot_title: snapshot.title,
+        target_type: snapshot.target_type,
+        cluster_rank: index + 1,
+        total_clusters: groups.size,
+        cluster_name: group.name,
+        cluster_size: group.size,
+        shared_themes: group.shared_themes,
+        cluster_members_detail: group_detail
+      )
+
+      cluster_inquiry = "Synthesize this cluster's mythological archetype patterns and motifs specifically answering: #{report.prompt}"
+      response = chat.ask(cluster_inquiry)
+
+      cleaned_summary = clean_markdown(response.content)
+
+      report.cluster_report_summaries.create!(
+        cluster_group: group,
+        chat: chat.is_a?(Chat) ? chat : nil,
+        position: index + 1,
+        content: cleaned_summary
+      )
+
+      report.update!(summarized_clusters_count: report.cluster_report_summaries.count)
+      broadcast_report_update(report)
+    end
+  end
+
+  def synthesize_report(report, snapshot)
+    report.update!(phase: ClusterReport::PHASE_SYNTHESIZING_REPORT)
+    broadcast_report_update(report)
+
+    digest = Clustering::SnapshotDigestBuilder.call(snapshot, report: report)
 
     chat = ClusterReportAgent.create!(
       snapshot_title: snapshot.title,
@@ -40,13 +101,18 @@ class GenerateClusterReportJob < ApplicationJob
       refined_title: refined_title
     )
     broadcast_report_update(report)
-  rescue StandardError => e
-    Rails.logger.error("[GenerateClusterReportJob] Report=#{cluster_report_id} #{e.class}: #{e.message}\n#{e.backtrace.first(8).join("\n")}")
-    report&.mark_failed!(e.message)
-    broadcast_report_update(report) if report
   end
 
-  private
+  def eager_associations(target_type)
+    case target_type
+    when "God"
+      { record: :pantheon }
+    when "Myth"
+      { record: { god: :pantheon } }
+    else
+      :record
+    end
+  end
 
   def clean_markdown(raw)
     text = raw.to_s.strip
