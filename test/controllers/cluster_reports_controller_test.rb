@@ -68,7 +68,20 @@ class ClusterReportsControllerTest < ActionDispatch::IntegrationTest
     assert_equal @report.prompt, created.prompt
     assert_equal "pending", created.status
     assert_equal @snapshot, created.cluster_snapshot
+    assert_equal @report, created.parent_report
     assert_redirected_to cluster_report_url(created)
+  end
+
+  test "deep synthesis copies existing cluster summaries to the new detailed report" do
+    group = @snapshot.cluster_groups.create!(name: "Solar Realm", shared_themes: [ "sun" ], size: 1)
+    @report.cluster_report_summaries.create!(cluster_group: group, position: 1, content: "Copied analysis")
+
+    post deep_synthesis_cluster_report_url(@report), params: { batch_size: 5 }
+
+    created = ClusterReport.last
+    assert_equal 1, created.cluster_report_summaries.count
+    assert_equal "Copied analysis", created.cluster_report_summaries.first.content
+    assert_equal @report, created.parent_report
   end
 
   test "deep synthesis clamps batch size to the allowed range" do

@@ -35,6 +35,12 @@
             Detailed
           </span>
         <% end %>
+
+        <% if report.parent_report.present? %>
+          <span class="text-xs text-slate-500">
+            from <%= link_to report.parent_report.title.truncate(30), cluster_report_path(report.parent_report), class: "text-indigo-600 hover:underline font-medium" %>
+          </span>
+        <% end %>
       </div>
 
       <h3 class="mt-2 text-base font-bold text-slate-900">

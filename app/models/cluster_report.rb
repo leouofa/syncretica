@@ -38,6 +38,8 @@ class ClusterReport < ApplicationRecord
 
   belongs_to :cluster_snapshot
   belongs_to :chat, optional: true
+  belongs_to :parent_report, class_name: "ClusterReport", optional: true
+  has_many :detailed_reports, class_name: "ClusterReport", foreign_key: :parent_report_id, dependent: :nullify
   has_many :cluster_report_summaries, dependent: :destroy
   has_many :cluster_sub_reports, dependent: :destroy
 
@@ -170,6 +172,31 @@ class ClusterReport < ApplicationRecord
     else
       "Processing..."
     end
+  end
+
+  def copy_summaries_from!(source_report)
+    return 0 if source_report.blank?
+
+    source_summaries = source_report.cluster_report_summaries.ordered
+    return 0 if source_summaries.empty?
+
+    now = Time.current
+    records = source_summaries.map do |summary|
+      {
+        cluster_report_id: id,
+        cluster_group_id: summary.cluster_group_id,
+        chat_id: summary.chat_id,
+        position: summary.position,
+        content: summary.content,
+        created_at: now,
+        updated_at: now
+      }
+    end
+
+    ClusterReportSummary.insert_all!(records)
+    count = cluster_report_summaries.count
+    update!(summarized_clusters_count: count)
+    count
   end
 
   private
