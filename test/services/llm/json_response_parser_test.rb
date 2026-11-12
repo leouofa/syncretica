@@ -34,4 +34,36 @@ class Llm::JsonResponseParserTest < ActiveSupport::TestCase
     invalid = OpenStruct.new(parsed: nil, content: "Not JSON at all")
     assert_equal [], Llm::JsonResponseParser.extract_list(invalid, key: "gods")
   end
+
+  test "extract_hash parses flat JSON objects and unwraps optional nested key" do
+    flat = OpenStruct.new(
+      parsed: nil,
+      content: <<~TEXT
+        <think>Analyzing Zeus themes...</think>
+        ```json
+        {
+          "Cosmic Order vs. Primordial Chaos": "Establishing celestial rule.",
+          "Submission to Fate (Moira)": "Navigating universal cosmic law."
+        }
+        ```
+      TEXT
+    )
+
+    assert_equal(
+      {
+        "Cosmic Order vs. Primordial Chaos" => "Establishing celestial rule.",
+        "Submission to Fate (Moira)" => "Navigating universal cosmic law."
+      },
+      Llm::JsonResponseParser.extract_hash(flat, key: "themes")
+    )
+
+    wrapped = OpenStruct.new(
+      parsed: { "themes" => { "Sovereignty" => "Ruler of Olympus." } },
+      content: "ignored"
+    )
+    assert_equal({ "Sovereignty" => "Ruler of Olympus." }, Llm::JsonResponseParser.extract_hash(wrapped, key: "themes"))
+
+    invalid = OpenStruct.new(parsed: nil, content: "No JSON object here")
+    assert_equal({}, Llm::JsonResponseParser.extract_hash(invalid, key: "themes"))
+  end
 end

@@ -2,6 +2,7 @@
 
 class God < ApplicationRecord
   belongs_to :pantheon
+  has_one :myth, dependent: :destroy
 
   normalizes :name, with: ->(value) { value.to_s.squish }
   normalizes :description, with: ->(value) { value.to_s.strip }

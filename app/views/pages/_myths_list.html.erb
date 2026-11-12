@@ -1,0 +1,72 @@
+<div id="myths_list">
+  <% if pantheon_groups.any? %>
+    <div class="mb-4 text-sm font-medium text-slate-500">
+      <%= pluralize(total_myths_count, "myth") %> cataloged across <%= pluralize(pantheon_groups.size, "pantheon") %>
+    </div>
+
+    <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
+      <table class="min-w-[44rem] w-full table-fixed divide-y divide-slate-200 text-left">
+        <thead class="bg-slate-50">
+          <tr>
+            <th scope="col" class="w-1/5 px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-600">
+              God
+            </th>
+            <th scope="col" class="w-4/5 px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-600">
+              Mythical Themes
+            </th>
+          </tr>
+        </thead>
+
+        <% pantheon_groups.each do |pantheon, myths| %>
+          <tbody class="divide-y divide-slate-200">
+            <tr class="bg-slate-100/80 border-y border-slate-200">
+              <th colspan="2" scope="colgroup" class="px-5 py-3 text-left">
+                <div class="flex items-center justify-between gap-3">
+                  <span class="text-sm font-semibold text-slate-900"><%= pantheon.name %></span>
+                  <span class="text-xs font-medium text-slate-500"><%= pluralize(myths.size, "myth") %></span>
+                </div>
+              </th>
+            </tr>
+
+            <% myths.each do |myth| %>
+              <tr class="align-top transition hover:bg-slate-50/70">
+                <td class="px-5 py-4 text-sm font-semibold text-slate-900">
+                  <%= myth.god.name %>
+                </td>
+                <td class="px-5 py-4">
+                  <% if myth.themes.any? %>
+                    <dl class="divide-y divide-slate-100" aria-label="Mythical themes for <%= myth.god.name %>">
+                      <% myth.themes.each do |title, description| %>
+                        <div class="py-2.5 first:pt-0 last:pb-0 grid grid-cols-1 gap-1 sm:grid-cols-12 sm:gap-4">
+                          <dt class="sm:col-span-4 text-sm font-semibold text-slate-900">
+                            <%= title %>
+                          </dt>
+                          <dd class="sm:col-span-8 text-sm leading-relaxed text-slate-600">
+                            <%= description %>
+                          </dd>
+                        </div>
+                      <% end %>
+                    </dl>
+                  <% else %>
+                    <span class="text-xs text-slate-400">No mythical themes</span>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        <% end %>
+      </table>
+    </div>
+  <% else %>
+    <div class="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-10 text-center">
+      <h2 class="text-base font-semibold text-slate-900">No myths yet</h2>
+      <p class="mt-1 text-sm text-slate-600">
+        <% if gods_count.zero? %>
+          First <%= link_to "populate gods", gods_path, class: "font-medium text-indigo-600 hover:text-indigo-500 underline" %>, then click <span class="font-medium text-slate-800">Populate Myths</span> above to synthesize mythical themes for each deity.
+        <% else %>
+          Click <span class="font-medium text-slate-800">Populate Myths</span> above to have the agent ask the LLM to synthesize mythical themes across your <%= pluralize(gods_count, "god") %>.
+        <% end %>
+      </p>
+    </div>
+  <% end %>
+</div>

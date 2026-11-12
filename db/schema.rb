@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_11_030000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_11_040000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -82,6 +82,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_11_030000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["chat_id"], name: "index_messages_on_chat_id"
+  end
+
+  create_table "myths", force: :cascade do |t|
+    t.bigint "god_id", null: false
+    t.jsonb "themes", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["god_id"], name: "index_myths_on_god_id", unique: true
   end
 
   create_table "pantheons", force: :cascade do |t|
@@ -266,4 +274,5 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_11_030000) do
   add_foreign_key "chats", "ruby_llm_models"
   add_foreign_key "gods", "pantheons"
   add_foreign_key "messages", "chats"
+  add_foreign_key "myths", "gods"
 end
