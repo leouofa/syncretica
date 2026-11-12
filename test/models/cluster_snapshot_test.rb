@@ -16,9 +16,14 @@ class ClusterSnapshotTest < ActiveSupport::TestCase
     assert_includes snapshot.errors[:target_type], "is not included in the list"
 
     snapshot.target_type = "God"
-    snapshot.level = 15
+    snapshot.level = 16
     assert_not snapshot.valid?
     assert_includes snapshot.errors[:level], "is not included in the list"
+
+    snapshot.level = 15
+    snapshot.distance_threshold = 0.22
+    snapshot.title = "Valid Title"
+    assert snapshot.valid?
   end
 
   test "creates snapshot with groups and memberships and cascades destruction" do

@@ -22,6 +22,18 @@ class ClustersControllerTest < ActionDispatch::IntegrationTest
     assert_includes response.body, %(turbo-stream action="update" target="clusters_content_frame")
   end
 
+  test "GET /clusters with level=15 renders complete coverage without singletons" do
+    get clusters_path(level: 15)
+    assert_response :success
+    assert_select "span", text: /100% Clustered/
+  end
+
+  test "GET /clusters with full_coverage=true returns complete coverage" do
+    get clusters_path(level: 6, full_coverage: "true")
+    assert_response :success
+    assert_select "span", text: /100% Clustered/
+  end
+
   test "POST /clusters/snapshot creates snapshot and redirects to it" do
     pantheon = Pantheon.create!(name: "Snapshot Test Pantheon", description: "Desc")
     v = Array.new(1024, 0.2)

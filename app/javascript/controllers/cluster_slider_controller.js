@@ -4,17 +4,22 @@ const THRESHOLD_MAP = {
   1: 0.16,
   2: 0.17,
   3: 0.18,
-  4: 0.20,
-  5: 0.22,
-  6: 0.24,
-  7: 0.25,
-  8: 0.26,
-  9: 0.27,
-  10: 0.28
+  4: 0.19,
+  5: 0.20,
+  6: 0.21,
+  7: 0.22,
+  8: 0.23,
+  9: 0.24,
+  10: 0.25,
+  11: 0.24,
+  12: 0.24,
+  13: 0.24,
+  14: 0.23,
+  15: 0.22
 }
 
 export default class extends Controller {
-  static targets = ["slider", "badge", "spinner"]
+  static targets = ["slider", "badge", "spinner", "coverageToggle"]
   static values = {
     tab: String,
     url: String
@@ -31,31 +36,64 @@ export default class extends Controller {
   }
 
   onSlide(event) {
-    const level = event.target.value
+    const level = parseInt(event.target.value, 10)
+    const isFullCoverage = (this.hasCoverageToggleTarget && this.coverageToggleTarget.checked) || level >= 15
     const threshold = THRESHOLD_MAP[level] || 0.22
 
-    if (this.hasBadgeTarget) {
-      this.badgeTarget.textContent = `Level ${level} • Cosine Distance ≤ ${threshold}`
+    if (level >= 15 && this.hasCoverageToggleTarget && !this.coverageToggleTarget.checked) {
+      this.coverageToggleTarget.checked = true
     }
 
-    const modalLevel = document.getElementById("modal_snapshot_level")
-    if (modalLevel) {
-      modalLevel.value = level
-    }
+    this.updateBadge(level, threshold, isFullCoverage)
+    this.updateModalFields(level, isFullCoverage)
 
     // Debounce network requests while sliding
     clearTimeout(this.timeout)
     this.timeout = setTimeout(() => {
-      this.fetchClusters(level)
+      this.fetchClusters(level, isFullCoverage)
     }, 200)
   }
 
   onChange(event) {
     clearTimeout(this.timeout)
-    this.fetchClusters(event.target.value)
+    const level = parseInt(event.target.value, 10)
+    const isFullCoverage = (this.hasCoverageToggleTarget && this.coverageToggleTarget.checked) || level >= 15
+    this.fetchClusters(level, isFullCoverage)
   }
 
-  async fetchClusters(level) {
+  onToggleCoverage(event) {
+    const isFullCoverage = event.target.checked
+    const level = this.hasSliderTarget ? parseInt(this.sliderTarget.value, 10) : 5
+    const threshold = THRESHOLD_MAP[level] || 0.22
+
+    this.updateBadge(level, threshold, isFullCoverage)
+    this.updateModalFields(level, isFullCoverage)
+    this.fetchClusters(level, isFullCoverage)
+  }
+
+  updateBadge(level, threshold, isFullCoverage) {
+    if (this.hasBadgeTarget) {
+      if (isFullCoverage) {
+        this.badgeTarget.textContent = `Level ${level} • Complete Coverage (0 Singletons)`
+      } else {
+        this.badgeTarget.textContent = `Level ${level} • Distance ≤ ${threshold}`
+      }
+    }
+  }
+
+  updateModalFields(level, isFullCoverage) {
+    const modalLevel = document.getElementById("modal_snapshot_level")
+    if (modalLevel) {
+      modalLevel.value = level
+    }
+
+    const modalCoverage = document.getElementById("modal_snapshot_full_coverage")
+    if (modalCoverage) {
+      modalCoverage.value = isFullCoverage
+    }
+  }
+
+  async fetchClusters(level, isFullCoverage) {
     if (this.hasSpinnerTarget) {
       this.spinnerTarget.classList.remove("hidden")
     }
@@ -63,6 +101,9 @@ export default class extends Controller {
     const targetUrl = new URL(this.urlValue, window.location.origin)
     targetUrl.searchParams.set("tab", this.tabValue)
     targetUrl.searchParams.set("level", level)
+    if (isFullCoverage) {
+      targetUrl.searchParams.set("full_coverage", "true")
+    }
 
     try {
       const response = await fetch(targetUrl.toString(), {
@@ -76,7 +117,6 @@ export default class extends Controller {
         if (window.Turbo && typeof window.Turbo.renderStreamMessage === "function") {
           window.Turbo.renderStreamMessage(streamText)
         } else {
-          // Fallback if renderStreamMessage is not directly exposed
           const frame = document.getElementById("clusters_content_frame")
           if (frame) {
             frame.src = targetUrl.toString()

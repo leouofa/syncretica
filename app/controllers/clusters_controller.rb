@@ -4,7 +4,7 @@ class ClustersController < ApplicationController
   before_action :set_target_and_level
 
   def index
-    @result = Clustering::EmbeddingClusterer.call(@target_class, level: @level)
+    @result = Clustering::EmbeddingClusterer.call(@target_class, level: @level, full_coverage: @full_coverage)
     @unembedded_count = @target_class.where(embedding: nil).count
     @snapshots = ClusterSnapshot.for_target(@target_class.name).ordered.limit(10)
 
@@ -15,13 +15,13 @@ class ClustersController < ApplicationController
   end
 
   def snapshot
-    result = Clustering::EmbeddingClusterer.call(@target_class, level: @level)
+    result = Clustering::EmbeddingClusterer.call(@target_class, level: @level, full_coverage: @full_coverage)
     snapshot = result.snapshot!(title: params[:title])
 
     redirect_to cluster_snapshot_path(snapshot),
                 notice: "Cluster snapshot '#{snapshot.title}' saved successfully with #{snapshot.clusters_count} clusters."
   rescue StandardError => e
-    redirect_to clusters_path(tab: @tab, level: @level),
+    redirect_to clusters_path(tab: @tab, level: @level, full_coverage: @full_coverage),
                 alert: "Failed to save snapshot: #{e.message}"
   end
 
@@ -30,6 +30,7 @@ class ClustersController < ApplicationController
   def set_target_and_level
     @tab = params[:tab].to_s.downcase == "myths" ? "myths" : "gods"
     @target_class = @tab == "myths" ? Myth : God
-    @level = (params[:level] || 5).to_i.clamp(1, 10)
+    @level = (params[:level] || 5).to_i.clamp(1, 15)
+    @full_coverage = ActiveModel::Type::Boolean.new.cast(params[:full_coverage]) || @level >= 15
   end
 end

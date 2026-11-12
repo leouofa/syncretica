@@ -6,28 +6,42 @@ module Clustering
       1 => 0.16,
       2 => 0.17,
       3 => 0.18,
-      4 => 0.20,
-      5 => 0.22,
-      6 => 0.24,
-      7 => 0.25,
-      8 => 0.26,
-      9 => 0.27,
-      10 => 0.28
+      4 => 0.19,
+      5 => 0.20,
+      6 => 0.21,
+      7 => 0.22,
+      8 => 0.23,
+      9 => 0.24,
+      10 => 0.25,
+      11 => 0.24,
+      12 => 0.24,
+      13 => 0.24,
+      14 => 0.23,
+      15 => 0.22
+    }.freeze
+
+    ABSORPTION_FRACTIONS = {
+      11 => 0.25,
+      12 => 0.50,
+      13 => 0.75,
+      14 => 0.90,
+      15 => 1.00
     }.freeze
 
     Cluster = Struct.new(:id, :name, :shared_themes, :records, :size, :pantheons, keyword_init: true)
 
     class Result
       attr_reader :target_class, :level, :distance_threshold, :total_embedded_count,
-                  :clusters, :singletons, :generated_at
+                  :clusters, :singletons, :full_coverage, :generated_at
 
-      def initialize(target_class:, level:, distance_threshold:, total_embedded_count:, clusters:, singletons:)
+      def initialize(target_class:, level:, distance_threshold:, total_embedded_count:, clusters:, singletons:, full_coverage: false)
         @target_class = target_class
         @level = level
         @distance_threshold = distance_threshold
         @total_embedded_count = total_embedded_count
         @clusters = clusters
         @singletons = singletons
+        @full_coverage = full_coverage
         @generated_at = Time.current
       end
 
@@ -47,8 +61,12 @@ module Clustering
         @clusters.map(&:size).max || 0
       end
 
+      def full_coverage?
+        @full_coverage || singletons_count.zero?
+      end
+
       def snapshot!(title:)
-        clean_title = title.to_s.squish.presence || "#{target_class.name} Clusters - Level #{level} (#{Time.current.strftime('%b %d, %Y')})"
+        clean_title = title.to_s.squish.presence || "#{target_class.name} Clusters - Level #{level}#{' (Full Coverage)' if full_coverage?} (#{Time.current.strftime('%b %d, %Y')})"
 
         ClusterSnapshot.transaction do
           snapshot = ClusterSnapshot.create!(
@@ -85,14 +103,15 @@ module Clustering
       end
     end
 
-    def self.call(target_class, level: 5, force: false)
-      new(target_class, level: level, force: force).call
+    def self.call(target_class, level: 5, full_coverage: false, force: false)
+      new(target_class, level: level, full_coverage: full_coverage, force: force).call
     end
 
-    def initialize(target_class, level: 5, force: false)
+    def initialize(target_class, level: 5, full_coverage: false, force: false)
       @target_class = target_class
-      @level = level.to_i.clamp(1, 10)
+      @level = level.to_i.clamp(1, 15)
       @threshold = THRESHOLD_MAP.fetch(@level, 0.22)
+      @full_coverage = full_coverage || @level >= 15
       @force = force
     end
 
@@ -111,7 +130,7 @@ module Clustering
     def cache_key
       max_updated = @target_class.maximum(:updated_at)&.to_i || 0
       embedded_count = @target_class.where.not(embedding: nil).count
-      "clusters/v1/#{@target_class.name.downcase}/level-#{@level}/t-#{@threshold}/#{max_updated}/#{embedded_count}"
+      "clusters/v3/#{@target_class.name.downcase}/level-#{@level}/t-#{@threshold}/fc-#{@full_coverage ? 1 : 0}/#{max_updated}/#{embedded_count}"
     end
 
     def compute
@@ -125,7 +144,8 @@ module Clustering
           distance_threshold: @threshold,
           total_embedded_count: 0,
           clusters: [],
-          singletons: []
+          singletons: [],
+          full_coverage: @full_coverage
         )
       end
 
@@ -165,6 +185,17 @@ module Clustering
         end
       end
 
+      # Determine absorption fraction based on level and full_coverage flag
+      fraction = if @full_coverage
+                   1.0
+      else
+                   ABSORPTION_FRACTIONS.fetch(@level, 0.0)
+      end
+
+      if fraction > 0.0 && multi_components.any? && singleton_ids.any?
+        absorb_singletons!(multi_components, singleton_ids, max_fraction: fraction)
+      end
+
       # Order clusters by size descending
       multi_components.sort_by! { |ids| -ids.size }
 
@@ -196,8 +227,50 @@ module Clustering
         distance_threshold: @threshold,
         total_embedded_count: embedded_ids.size,
         clusters: clusters,
-        singletons: singletons
+        singletons: singletons,
+        full_coverage: @full_coverage
       )
+    end
+
+    def absorb_singletons!(multi_components, singleton_ids, max_fraction: 1.0)
+      return if multi_components.empty? || singleton_ids.empty?
+
+      table = @target_class.table_name
+      clustered_ids = multi_components.flatten
+
+      sql = <<-SQL.squish
+        WITH clustered AS (
+          SELECT id, embedding FROM #{table} WHERE id IN (#{clustered_ids.join(',')})
+        )
+        SELECT s.id, (
+          SELECT c.id FROM clustered c ORDER BY s.embedding <=> c.embedding LIMIT 1
+        ), (
+          SELECT (s.embedding <=> c.embedding) FROM clustered c ORDER BY s.embedding <=> c.embedding LIMIT 1
+        ) AS dist
+        FROM #{table} s
+        WHERE s.id IN (#{singleton_ids.join(',')})
+        ORDER BY dist ASC
+      SQL
+
+      rows = ActiveRecord::Base.connection.select_rows(sql)
+      to_absorb = (rows.size * max_fraction).ceil
+      absorbed_rows = rows.take(to_absorb)
+
+      god_to_component_idx = {}
+      multi_components.each_with_index do |member_ids, idx|
+        member_ids.each { |gid| god_to_component_idx[gid] = idx }
+      end
+
+      absorbed_ids = Set.new
+      absorbed_rows.each do |s_id, nearest_c_id, _|
+        idx = god_to_component_idx[nearest_c_id]
+        if idx
+          multi_components[idx] << s_id
+          absorbed_ids << s_id
+        end
+      end
+
+      singleton_ids.reject! { |id| absorbed_ids.include?(id) }
     end
 
     def fetch_pairs

@@ -11,12 +11,27 @@ class EmbeddingClustererTest < ActiveSupport::TestCase
     assert_empty result.singletons
   end
 
-  test "clamps level within 1 to 10" do
+  test "clamps level within 1 to 15" do
     result_low = Clustering::EmbeddingClusterer.new(God, level: -5)
     assert_equal 1, result_low.instance_variable_get(:@level)
 
     result_high = Clustering::EmbeddingClusterer.new(God, level: 99)
-    assert_equal 10, result_high.instance_variable_get(:@level)
+    assert_equal 15, result_high.instance_variable_get(:@level)
+  end
+
+  test "full_coverage absorbs singletons so unclustered count is zero" do
+    pantheon = Pantheon.create!(name: "Test Coverage Pantheon", description: "Greek")
+    v1 = Array.new(1024, 0.1)
+    v2 = Array.new(1024, 0.1) # pair
+    v3 = Array.new(1024, 0.5) # singleton
+
+    God.create!(pantheon: pantheon, name: "Core God 1", description: "D1", themes: ["sky"], embedding: v1)
+    God.create!(pantheon: pantheon, name: "Core God 2", description: "D2", themes: ["sky"], embedding: v2)
+    God.create!(pantheon: pantheon, name: "Isolated God 3", description: "D3", themes: ["underworld"], embedding: v3)
+
+    result = Clustering::EmbeddingClusterer.call(God, level: 5, full_coverage: true, force: true)
+    assert_equal 0, result.singletons_count
+    assert result.full_coverage?
   end
 
   test "clusters embedded gods and supports saving snapshots" do

@@ -5,7 +5,7 @@ class ClusterSnapshot < ApplicationRecord
   has_many :cluster_memberships, through: :cluster_groups
 
   validates :target_type, presence: true, inclusion: { in: %w[God Myth] }
-  validates :level, presence: true, inclusion: { in: 1..10 }
+  validates :level, presence: true, inclusion: { in: 1..15 }
   validates :distance_threshold, presence: true, numericality: { greater_than: 0 }
   validates :title, presence: true
 
