@@ -33,6 +33,12 @@ Rails.application.routes.draw do
     post :generate_embedding, on: :member
   end
 
+  resources :clusters, only: [ :index ] do
+    post :snapshot, on: :collection
+  end
+
+  resources :cluster_snapshots, only: [ :index, :show, :destroy ]
+
   resource :settings, only: [ :show ] do
     post :generate_embeddings, on: :collection
   end

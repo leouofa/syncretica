@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_12_000001) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_12_155342) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -52,6 +52,38 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_12_000001) do
     t.datetime "updated_at", null: false
     t.index ["claimed_until"], name: "index_chats_on_claimed_until", where: "(claim_token IS NOT NULL)"
     t.index ["ruby_llm_model_id"], name: "index_chats_on_ruby_llm_model_id"
+  end
+
+  create_table "cluster_groups", force: :cascade do |t|
+    t.bigint "cluster_snapshot_id", null: false
+    t.string "name", null: false
+    t.jsonb "shared_themes", default: [], null: false
+    t.integer "size", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["cluster_snapshot_id"], name: "index_cluster_groups_on_cluster_snapshot_id"
+  end
+
+  create_table "cluster_memberships", force: :cascade do |t|
+    t.bigint "cluster_group_id", null: false
+    t.string "record_type", null: false
+    t.bigint "record_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["cluster_group_id"], name: "index_cluster_memberships_on_cluster_group_id"
+    t.index ["record_type", "record_id"], name: "index_cluster_memberships_on_record"
+  end
+
+  create_table "cluster_snapshots", force: :cascade do |t|
+    t.string "target_type", null: false
+    t.integer "level", null: false
+    t.float "distance_threshold", null: false
+    t.string "title", null: false
+    t.integer "clusters_count", default: 0, null: false
+    t.integer "items_count", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["target_type", "created_at"], name: "index_cluster_snapshots_on_target_type_and_created_at"
   end
 
   create_table "gods", force: :cascade do |t|
@@ -281,6 +313,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_12_000001) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "chats", "ruby_llm_models"
+  add_foreign_key "cluster_groups", "cluster_snapshots", on_delete: :cascade
+  add_foreign_key "cluster_memberships", "cluster_groups", on_delete: :cascade
   add_foreign_key "gods", "pantheons"
   add_foreign_key "messages", "chats"
   add_foreign_key "myths", "gods"
