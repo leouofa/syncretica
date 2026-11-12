@@ -23,11 +23,13 @@ Rails.application.routes.draw do
     post :populate, on: :collection
   end
 
-  resources :gods, only: [] do
+  resources :gods, only: [ :show ] do
     post :populate, on: :collection
+    post :generate_embedding, on: :member
   end
 
-  resources :myths, only: [] do
+  resources :myths, only: [ :show ] do
     post :populate, on: :collection
+    post :generate_embedding, on: :member
   end
 end

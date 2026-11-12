@@ -34,7 +34,7 @@
             <% gods.each do |god| %>
               <tr class="align-top transition hover:bg-slate-50/70">
                 <td class="px-5 py-4 text-sm font-semibold text-slate-900">
-                  <%= god.name %>
+                  <%= link_to god.name, god_path(god), class: "text-indigo-600 hover:text-indigo-500 hover:underline" %>
                 </td>
                 <td class="px-5 py-4 text-sm leading-relaxed text-slate-600">
                   <%= god.description %>

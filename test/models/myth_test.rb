@@ -87,4 +87,25 @@ class MythTest < ActiveSupport::TestCase
       zeus.destroy!
     end
   end
+
+  test "embedding_input formats god, pantheon, and mythical themes" do
+    greek = Pantheon.create!(name: "Greek", description: "Olympian deities.")
+    zeus = God.create!(pantheon: greek, name: "Zeus", description: "King of Olympus.")
+    myth = Myth.create!(
+      god: zeus,
+      themes: {
+        "Sovereignty" => "Supreme Olympian rule.",
+        "Justice" => "Guarantor of oaths."
+      }
+    )
+
+    expected = <<~TEXT.chomp
+      Myth of Zeus (Greek)
+      Sovereignty: Supreme Olympian rule.
+      Justice: Guarantor of oaths.
+    TEXT
+
+    assert_equal expected, myth.embedding_input
+    assert_not myth.embedded?
+  end
 end

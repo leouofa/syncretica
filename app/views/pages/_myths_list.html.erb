@@ -31,7 +31,7 @@
             <% myths.each do |myth| %>
               <tr class="align-top transition hover:bg-slate-50/70">
                 <td class="px-5 py-4 text-sm font-semibold text-slate-900">
-                  <%= myth.god.name %>
+                  <%= link_to myth.god.name, myth_path(myth), class: "text-indigo-600 hover:text-indigo-500 hover:underline" %>
                 </td>
                 <td class="px-5 py-4">
                   <% if myth.themes.any? %>

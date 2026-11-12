@@ -1,6 +1,17 @@
 # frozen_string_literal: true
 
 class GodsController < ApplicationController
+  include EmbeddableActions
+
+  def show
+    @god = God.includes(:pantheon, :myth).find(params[:id])
+  end
+
+  def generate_embedding
+    @god = God.find(params[:id])
+    enqueue_embedding_generation(@god)
+  end
+
   def populate
     PopulateGodsJob.perform_later
 

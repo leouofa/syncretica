@@ -1,0 +1,79 @@
+<% target_id = GenerateEmbeddingJob.target_id_for(record) %>
+<% running = local_assigns.fetch(:running, false) %>
+<% status_message = local_assigns[:status_message] %>
+<% status_kind = local_assigns[:status_kind] %>
+<% idle_label = record.embedded? ? "Regenerate Embedding" : "Generate Embedding" %>
+
+<section id="<%= target_id %>" class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+  <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <div class="flex items-center gap-2.5">
+        <h2 class="text-base font-semibold text-slate-900">Vector Embedding</h2>
+        <% if record.embedded? %>
+          <span class="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
+            Generated
+          </span>
+        <% else %>
+          <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">
+            Not generated
+          </span>
+        <% end %>
+      </div>
+      <p class="mt-1 text-xs text-slate-500">
+        <%= record.embedding_dimensions %>-dimensional pgvector embedding via <code class="font-mono text-slate-700"><%= Llm::EmbeddingGenerator.configured_model %></code>
+      </p>
+    </div>
+
+    <div class="shrink-0">
+      <%= button_to action_path,
+                    method: :post,
+                    disabled: running,
+                    class: [
+                      "inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition",
+                      running ? "bg-indigo-400 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-500 cursor-pointer"
+                    ].join(" ") do %>
+        <% if running %>
+          <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+          </svg>
+          <span>Generating Embedding...</span>
+        <% else %>
+          <span><%= idle_label %></span>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+
+  <% if status_message.present? %>
+    <% banner_classes = case status_kind&.to_sym
+                        when :success then "bg-emerald-50 text-emerald-800 border-emerald-200"
+                        when :error then "bg-rose-50 text-rose-800 border-rose-200"
+                        else "bg-indigo-50 text-indigo-800 border-indigo-200"
+                        end %>
+    <p role="status" class="rounded-md border px-3 py-2 text-xs font-medium <%= banner_classes %>">
+      <%= status_message %>
+    </p>
+  <% end %>
+
+  <dl class="grid grid-cols-1 gap-4 border-t border-slate-100 pt-4 sm:grid-cols-3 text-sm">
+    <div>
+      <dt class="text-xs font-medium uppercase tracking-wider text-slate-500">Model</dt>
+      <dd class="mt-1 font-mono text-xs text-slate-900">
+        <%= record.embedding_model.presence || "—" %>
+      </dd>
+    </div>
+    <div>
+      <dt class="text-xs font-medium uppercase tracking-wider text-slate-500">Dimensions</dt>
+      <dd class="mt-1 text-xs font-medium text-slate-900">
+        <%= record.embedded? ? record.embedding_dimensions : "—" %>
+      </dd>
+    </div>
+    <div>
+      <dt class="text-xs font-medium uppercase tracking-wider text-slate-500">Generated At</dt>
+      <dd class="mt-1 text-xs text-slate-900">
+        <%= record.embedded_at ? l(record.embedded_at, format: :short) : "—" %>
+      </dd>
+    </div>
+  </dl>
+</section>
