@@ -1,0 +1,93 @@
+<% snapshot = local_assigns[:snapshot] || report.cluster_snapshot %>
+<div id="cluster_report_<%= report.id %>" class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-4 transition hover:border-slate-300">
+  <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 border-b border-slate-100 pb-3">
+    <div>
+      <div class="flex items-center gap-2">
+        <% case report.status %>
+        <% when "completed" %>
+          <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 border border-emerald-200">
+            <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span> Completed
+          </span>
+        <% when "running" %>
+          <span class="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700 border border-indigo-200">
+            <svg class="h-3 w-3 animate-spin text-indigo-600" viewBox="0 0 24 24" fill="none">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+            </svg>
+            <%= report.phase == "synthesizing_report" ? "Synthesizing Report..." : "Summarizing Clusters..." %>
+          </span>
+        <% when "failed" %>
+          <span class="inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-2.5 py-0.5 text-xs font-semibold text-rose-700 border border-rose-200">
+            <span class="h-1.5 w-1.5 rounded-full bg-rose-500"></span> Failed
+          </span>
+        <% else %>
+          <span class="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
+            <span class="h-1.5 w-1.5 rounded-full bg-slate-400"></span> Queued
+          </span>
+        <% end %>
+
+        <span class="text-xs text-slate-400">
+          <%= report.created_at.strftime("%b %d, %Y %H:%M") %>
+        </span>
+      </div>
+
+      <h3 class="mt-2 text-base font-bold text-slate-900">
+        <%= link_to report.title, cluster_report_path(report), class: "text-slate-900 hover:text-indigo-600 transition" %>
+      </h3>
+      <div class="text-xs text-slate-500 mt-0.5">
+        Snapshot: <%= link_to snapshot.title, cluster_snapshot_path(snapshot), class: "text-indigo-600 hover:underline font-medium" %>
+        (<%= snapshot.target_type %>, Level <%= snapshot.level %>)
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <%= link_to "View Full Report &rarr;".html_safe, cluster_report_path(report), class: "text-xs font-semibold text-indigo-600 hover:text-indigo-500 hover:underline" %>
+      <span class="text-slate-300">|</span>
+      <%= button_to "Delete", cluster_report_path(report), method: :delete, data: { turbo_confirm: "Delete this report?" }, class: "text-xs font-semibold text-rose-500 hover:text-rose-600 cursor-pointer" %>
+    </div>
+  </div>
+
+  <!-- Prompt Quote -->
+  <div class="rounded-lg bg-slate-50/80 px-3.5 py-2 text-xs text-slate-700 border border-slate-100">
+    <span class="font-semibold text-slate-900">Inquiry:</span> &ldquo;<%= report.prompt %>&rdquo;
+  </div>
+
+  <% if report.completed? %>
+    <!-- Preview Content -->
+    <div class="markdown-report text-xs line-clamp-4 max-h-48 overflow-hidden relative">
+      <%= render_markdown(report.content) %>
+      <div class="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
+    </div>
+    <div class="flex items-center justify-between pt-1 text-xs">
+      <%= link_to "Read complete analysis &rarr;".html_safe, cluster_report_path(report), class: "font-semibold text-indigo-600 hover:text-indigo-500 hover:underline" %>
+      <span class="text-slate-400">Includes <%= report.cluster_report_summaries.size %> cluster summaries</span>
+    </div>
+  <% elsif report.running? || report.pending? %>
+    <div class="rounded-lg bg-indigo-50/50 p-4 text-xs text-indigo-800 space-y-2.5">
+      <div class="flex items-center justify-between">
+        <span class="font-semibold flex items-center gap-2">
+          <svg class="h-4 w-4 animate-spin text-indigo-600" viewBox="0 0 24 24" fill="none">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+          </svg>
+          <%= report.phase_description %>
+        </span>
+        <span class="font-mono font-bold text-indigo-700"><%= report.progress_percentage %>%</span>
+      </div>
+
+      <!-- Progress bar -->
+      <div class="w-full bg-indigo-100 rounded-full h-2 overflow-hidden">
+        <div class="bg-indigo-600 h-2 rounded-full transition-all duration-300" style="width: <%= [report.progress_percentage, 5].max %>%"></div>
+      </div>
+
+      <p class="text-[11px] text-indigo-600">
+        <%= report.phase == "synthesizing_report" ? "Synthesizing cross-cluster archetypes into final report..." : "Each cluster's full members are being analyzed through your inquiry lens before synthesis." %>
+      </p>
+    </div>
+  <% elsif report.failed? %>
+    <div class="rounded-lg bg-rose-50 p-3 text-xs text-rose-800 border border-rose-200">
+      <p class="font-semibold">Generation failed:</p>
+      <p class="mt-0.5 text-rose-700"><%= report.error_message %></p>
+    </div>
+  <% end %>
+</div>

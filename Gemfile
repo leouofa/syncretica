@@ -47,6 +47,10 @@ gem "image_processing", "~> 1.2"
 # Unified Ruby interface for LLMs
 gem "ruby_llm"
 
+# Markdown rendering for LLM cluster reports
+gem "kramdown"
+gem "kramdown-parser-gfm"
+
 # Nearest-neighbor vector search with pgvector
 gem "neighbor"
 

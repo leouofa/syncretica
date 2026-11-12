@@ -4,13 +4,15 @@ class ClusterSnapshotsController < ApplicationController
   before_action :set_snapshot, only: %i[show destroy]
 
   def index
-    @snapshots = ClusterSnapshot.ordered
+    @snapshots = ClusterSnapshot.ordered.includes(:cluster_reports)
     @target_type = params[:target_type].presence
     @snapshots = @snapshots.for_target(@target_type) if @target_type.present?
   end
 
   def show
     @cluster_groups = @snapshot.cluster_groups.by_size.includes(cluster_memberships: :record)
+    @reports = @snapshot.cluster_reports.ordered
+    @new_report = @snapshot.cluster_reports.build(prompt: ClusterReport::DEFAULT_PROMPT)
   end
 
   def destroy

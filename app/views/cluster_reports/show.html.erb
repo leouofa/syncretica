@@ -1,0 +1,34 @@
+<% content_for :title, "#{@report.title} | Syncretica Reports" %>
+
+<%= turbo_stream_from "cluster_report_#{@report.id}" %>
+
+<div class="w-full max-w-5xl mx-auto space-y-8 pb-16">
+  <header class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between border-b border-slate-200 pb-6">
+    <div class="space-y-1">
+      <div class="flex items-center gap-2 text-xs font-semibold text-slate-500">
+        <%= link_to "&larr; All Reports".html_safe, cluster_reports_path, class: "text-indigo-600 hover:underline" %>
+        <span>&bull;</span>
+        <span>Snapshot:</span>
+        <%= link_to @report.cluster_snapshot.title, cluster_snapshot_path(@report.cluster_snapshot), class: "text-indigo-600 hover:underline font-bold" %>
+      </div>
+      <h1 class="text-3xl font-extrabold tracking-tight text-slate-900"><%= @report.title %></h1>
+      <p class="text-xs text-slate-500">
+        Generated for <strong><%= @report.cluster_snapshot.target_type %></strong> cluster snapshot
+        (Level <%= @report.cluster_snapshot.level %>, <%= @report.cluster_snapshot.clusters_count %> clusters, <%= @report.cluster_snapshot.items_count %> items)
+        &bull; <%= @report.created_at.strftime("%B %d, %Y at %H:%M UTC") %>
+      </p>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <%= button_to "Delete Report", cluster_report_path(@report), method: :delete, data: { turbo_confirm: "Permanently delete this report?" }, class: "rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-xs font-semibold text-rose-600 shadow-sm hover:bg-rose-50 cursor-pointer" %>
+    </div>
+  </header>
+
+  <!-- Query / Prompt Callout -->
+  <div class="rounded-xl border border-indigo-100 bg-indigo-50/40 p-4 text-xs">
+    <div class="font-semibold uppercase tracking-wider text-indigo-900 mb-1">Inquiry / Research Prompt</div>
+    <div class="text-slate-800 text-sm font-medium">&ldquo;<%= @report.prompt %>&rdquo;</div>
+  </div>
+
+  <%= render "cluster_reports/report_detail", report: @report %>
+</div>

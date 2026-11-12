@@ -9,6 +9,47 @@ module Llm
     DEFAULT_CAPABILITIES = %w[function_calling streaming structured_output].freeze
     DEFAULT_MODALITIES = { "input" => %w[text], "output" => %w[text] }.freeze
 
+    CONTEXT_WINDOW_PRESETS = [
+      { label: "32K",  tokens: 32_768 },
+      { label: "64K",  tokens: 65_536 },
+      { label: "128K", tokens: 131_072 },
+      { label: "256K", tokens: 262_144 },
+      { label: "512K", tokens: 524_288 },
+      { label: "1M",   tokens: 1_048_576 }
+    ].freeze
+
+    def self.current_context_window(model_id: ENV["OLLAMA_MODEL"], provider: "ollama")
+      model_name = model_id.presence || ENV["OLLAMA_MODEL"]
+      return DEFAULT_CONTEXT_WINDOW if model_name.blank?
+
+      record = RubyLLM::ActiveRecord::Model.find_by(provider: provider.to_s, model_id: model_name.to_s)
+      record&.context_window || ENV.fetch("OLLAMA_CONTEXT_WINDOW", DEFAULT_CONTEXT_WINDOW).to_i
+    rescue StandardError
+      DEFAULT_CONTEXT_WINDOW
+    end
+
+    def self.update_context_window!(tokens, model_id: ENV["OLLAMA_MODEL"], provider: "ollama")
+      token_count = tokens.to_i
+      raise ArgumentError, "Context window must be at least 4,096 tokens" if token_count < 4_096
+
+      model_name = model_id.presence || ENV["OLLAMA_MODEL"]
+      raise ArgumentError, "No model configured to update" if model_name.blank?
+
+      record = ensure_configured_model!(
+        model_id: model_name,
+        provider: provider,
+        context_window: token_count
+      )
+      record.update!(context_window: token_count)
+      RubyLLM.models.load_from_store if RubyLLM.config.model_registry_store
+      record.context_window
+    end
+
+    def self.digest_char_budget(fraction: 0.55, chars_per_token: 4)
+      window = current_context_window
+      (window * chars_per_token * fraction).to_i.clamp(30_000, 3_000_000)
+    end
+
     def self.ensure_configured_model!(
       model_id: ENV["OLLAMA_MODEL"],
       provider: "ollama",

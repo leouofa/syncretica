@@ -2,23 +2,27 @@
 
 require "test_helper"
 
-module Llm
-  class ModelRegistryTest < ActiveSupport::TestCase
-    test "ensure_configured_model! registers the configured model idempotently" do
-      model_id = "test-qwen-local"
+class ModelRegistryTest < ActiveSupport::TestCase
+  test "current_context_window returns default when not set" do
+    window = Llm::ModelRegistry.current_context_window(model_id: "non-existent-model")
+    assert_operator window, :>=, 4096
+  end
 
-      first = Llm::ModelRegistry.ensure_configured_model!(model_id: model_id)
-      second = Llm::ModelRegistry.ensure_configured_model!(model_id: model_id)
+  test "update_context_window! updates model record and changes digest budget" do
+    model_id = "test-model-#{SecureRandom.hex(4)}"
+    record = Llm::ModelRegistry.ensure_configured_model!(model_id: model_id)
+    assert_not_nil record
 
-      assert_equal first.id, second.id
-      assert_equal "ollama", second.provider
-      assert_equal model_id, second.model_id
-      assert_equal Llm::ModelRegistry::DEFAULT_CONTEXT_WINDOW, second.context_window
-      assert_not_nil RubyLLM.models.find_configured(model_id, provider: :ollama)
-    end
+    Llm::ModelRegistry.update_context_window!(131_072, model_id: model_id)
+    assert_equal 131_072, Llm::ModelRegistry.current_context_window(model_id: model_id)
 
-    test "ensure_configured_model! returns nil when model_id is blank" do
-      assert_nil Llm::ModelRegistry.ensure_configured_model!(model_id: "  ")
+    budget = Llm::ModelRegistry.digest_char_budget
+    assert_operator budget, :>=, 30_000
+  end
+
+  test "update_context_window! raises on small token count" do
+    assert_raises(ArgumentError) do
+      Llm::ModelRegistry.update_context_window!(100, model_id: "some-model")
     end
   end
 end

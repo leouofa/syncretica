@@ -1,0 +1,102 @@
+<div id="cluster_report_detail_<%= report.id %>" class="space-y-6">
+  <!-- Status banner with progress if in progress or failed -->
+  <% if report.running? || report.pending? %>
+    <div class="rounded-xl border border-indigo-200 bg-indigo-50/70 p-6 text-indigo-900 shadow-sm space-y-3">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <svg class="h-6 w-6 animate-spin text-indigo-600 flex-shrink-0" viewBox="0 0 24 24" fill="none">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+          </svg>
+          <div>
+            <h4 class="font-bold text-sm"><%= report.phase_description %></h4>
+            <p class="text-xs text-indigo-700 mt-0.5">
+              <%= report.phase == "synthesizing_report" ? "Final synthesis in progress. This report will update live when finished." : "Analyzing untruncated members for each cluster. Live progress streams below." %>
+            </p>
+          </div>
+        </div>
+        <div class="font-mono text-sm font-bold text-indigo-700">
+          <%= report.progress_percentage %>%
+        </div>
+      </div>
+
+      <!-- Live progress bar -->
+      <div class="w-full bg-indigo-200/80 rounded-full h-2.5 overflow-hidden">
+        <div class="bg-indigo-600 h-2.5 rounded-full transition-all duration-300" style="width: <%= [report.progress_percentage, 5].max %>%"></div>
+      </div>
+    </div>
+  <% elsif report.failed? %>
+    <div class="rounded-xl border border-rose-200 bg-rose-50 p-5 text-rose-900 shadow-sm">
+      <h4 class="font-bold text-sm">Analysis Generation Failed</h4>
+      <p class="text-xs text-rose-700 mt-1"><%= report.error_message %></p>
+    </div>
+  <% end %>
+
+  <% if report.completed? %>
+    <!-- Final Synthesized Report -->
+    <article class="rounded-2xl border border-slate-200 bg-white p-8 sm:p-10 shadow-sm">
+      <div class="markdown-report">
+        <%= render_markdown(report.content) %>
+      </div>
+    </article>
+  <% end %>
+
+  <!-- Collapsible Cluster-by-Cluster Analysis Section -->
+  <% summaries = report.cluster_report_summaries.ordered.includes(cluster_group: { cluster_memberships: :record }) %>
+  <% if summaries.any? %>
+    <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+      <details class="group" <%= "open" unless report.completed? %>>
+        <summary class="flex items-center justify-between cursor-pointer list-none select-none">
+          <div class="flex items-center gap-2.5">
+            <h3 class="text-base font-bold text-slate-900">
+              Cluster-by-Cluster Prompt Analyses (<%= summaries.size %> <%= 'cluster'.pluralize(summaries.size) %>)
+            </h3>
+            <span class="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 border border-indigo-200">
+              Map Phase
+            </span>
+          </div>
+          <span class="text-xs font-semibold text-indigo-600 group-open:rotate-180 transition-transform">
+            &#9660;
+          </span>
+        </summary>
+
+        <p class="text-xs text-slate-500 mt-2 mb-4 border-b border-slate-100 pb-3">
+          Individual analytical syntheses produced by the agent for each cluster, evaluating untruncated deities/myths against the report's specific inquiry.
+        </p>
+
+        <div class="space-y-4 pt-1">
+          <% summaries.each do |summary| %>
+            <% group = summary.cluster_group %>
+            <div class="rounded-xl border border-slate-200 bg-slate-50/50 p-4 space-y-2.5">
+              <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/70 pb-2">
+                <div class="flex items-center gap-2">
+                  <span class="inline-flex items-center rounded-md bg-indigo-100 px-2 py-0.5 text-xs font-bold text-indigo-800">
+                    Cluster #<%= summary.position %>
+                  </span>
+                  <h4 class="text-sm font-bold text-slate-900"><%= group.name %></h4>
+                  <span class="rounded-full bg-white px-2 py-0.5 text-[11px] font-medium text-slate-600 border border-slate-200">
+                    <%= pluralize(group.size, "member") %>
+                  </span>
+                </div>
+
+                <% if group.shared_themes.any? %>
+                  <div class="flex flex-wrap gap-1">
+                    <% group.shared_themes.first(3).each do |theme| %>
+                      <span class="rounded bg-white px-1.5 py-0.5 text-[10px] font-medium text-slate-600 border border-slate-200">
+                        <%= theme %>
+                      </span>
+                    <% end %>
+                  </div>
+                <% end %>
+              </div>
+
+              <div class="markdown-report text-xs text-slate-700 leading-relaxed">
+                <%= render_markdown(summary.content) %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </details>
+    </section>
+  <% end %>
+</div>
