@@ -10,6 +10,7 @@ class ClusterReport < ApplicationRecord
 
   PHASE_QUEUED               = "queued"
   PHASE_SUMMARIZING_CLUSTERS = "summarizing_clusters"
+  PHASE_AGGREGATING_BATCHES  = "aggregating_batches"
   PHASE_SYNTHESIZING_REPORT  = "synthesizing_report"
   PHASE_COMPLETED            = "completed"
   PHASE_FAILED               = "failed"
@@ -17,10 +18,14 @@ class ClusterReport < ApplicationRecord
   PHASES = [
     PHASE_QUEUED,
     PHASE_SUMMARIZING_CLUSTERS,
+    PHASE_AGGREGATING_BATCHES,
     PHASE_SYNTHESIZING_REPORT,
     PHASE_COMPLETED,
     PHASE_FAILED
   ].freeze
+
+  DEFAULT_BATCH_SIZE = 5
+  BATCH_SIZE_RANGE = (2..50).freeze
 
   DEFAULT_PROMPT = "Find interesting patterns across myths or gods, highlighting cross-pantheon archetypes, structural motifs, and surprising connections."
 
@@ -34,6 +39,7 @@ class ClusterReport < ApplicationRecord
   belongs_to :cluster_snapshot
   belongs_to :chat, optional: true
   has_many :cluster_report_summaries, dependent: :destroy
+  has_many :cluster_sub_reports, dependent: :destroy
 
   validates :title, presence: true
   validates :prompt, presence: true
@@ -66,9 +72,14 @@ class ClusterReport < ApplicationRecord
     status == STATUS_FAILED
   end
 
-  def mark_running!(phase: PHASE_SUMMARIZING_CLUSTERS, total_clusters: nil)
+  def detailed?
+    is_detailed?
+  end
+
+  def mark_running!(phase: PHASE_SUMMARIZING_CLUSTERS, total_clusters: nil, total_batches: nil)
     attrs = { status: STATUS_RUNNING, phase: phase }
     attrs[:total_clusters_count] = total_clusters if total_clusters.present?
+    attrs[:total_batches_count] = total_batches if total_batches.present?
     update!(attrs)
   end
 
@@ -98,8 +109,13 @@ class ClusterReport < ApplicationRecord
 
     case phase
     when PHASE_SUMMARIZING_CLUSTERS
-      # 0% - 85% allocated to summarizing clusters
-      ((summarized_clusters_count.to_f / total_clusters_count) * 85).round
+      # 0% - 70% allocated to summarizing clusters
+      ((summarized_clusters_count.to_f / total_clusters_count) * 70).round
+    when PHASE_AGGREGATING_BATCHES
+      # 70% - 90% allocated to aggregating batch analyses
+      return 70 if total_batches_count.zero?
+
+      70 + ((aggregated_batches_count.to_f / total_batches_count) * 20).round
     when PHASE_SYNTHESIZING_REPORT
       92
     else
@@ -112,15 +128,47 @@ class ClusterReport < ApplicationRecord
     when PHASE_QUEUED
       "Queued for processing"
     when PHASE_SUMMARIZING_CLUSTERS
-      "Phase 1 of 2: Analyzing cluster #{summarized_clusters_count} of #{total_clusters_count} through inquiry lens..."
+      if detailed?
+        "Phase 1 of 3: Analyzing cluster #{summarized_clusters_count} of #{total_clusters_count} through inquiry lens..."
+      else
+        "Phase 1 of 2: Analyzing cluster #{summarized_clusters_count} of #{total_clusters_count} through inquiry lens..."
+      end
+    when PHASE_AGGREGATING_BATCHES
+      "Phase 2 of 3: Aggregating batch #{aggregated_batches_count} of #{total_batches_count} into mid-level analyses..."
     when PHASE_SYNTHESIZING_REPORT
-      "Phase 2 of 2: Synthesizing final comparative report from #{total_clusters_count} cluster analyses..."
+      if detailed?
+        "Phase 3 of 3: Synthesizing deep report from #{total_batches_count} batch analyses..."
+      else
+        "Phase 2 of 2: Synthesizing final comparative report from #{total_clusters_count} cluster analyses..."
+      end
     when PHASE_COMPLETED
       "Report generation complete"
     when PHASE_FAILED
       "Generation failed"
     else
       status.titleize
+    end
+  end
+
+  def progress_label
+    case phase
+    when PHASE_SUMMARIZING_CLUSTERS then "Summarizing Clusters..."
+    when PHASE_AGGREGATING_BATCHES then "Aggregating Batches..."
+    when PHASE_SYNTHESIZING_REPORT then "Synthesizing Report..."
+    else "Processing..."
+    end
+  end
+
+  def progress_message
+    case phase
+    when PHASE_SUMMARIZING_CLUSTERS
+      "Each cluster's full members are being analyzed through your inquiry lens before synthesis."
+    when PHASE_AGGREGATING_BATCHES
+      "Cluster analyses are being aggregated into mid-level batch narratives."
+    when PHASE_SYNTHESIZING_REPORT
+      detailed? ? "Synthesizing the batch analyses into a detailed deep report..." : "Synthesizing cross-cluster archetypes into the final report..."
+    else
+      "Processing..."
     end
   end
 

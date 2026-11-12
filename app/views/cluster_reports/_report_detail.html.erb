@@ -11,7 +11,7 @@
           <div>
             <h4 class="font-bold text-sm"><%= report.phase_description %></h4>
             <p class="text-xs text-indigo-700 mt-0.5">
-              <%= report.phase == "synthesizing_report" ? "Final synthesis in progress. This report will update live when finished." : "Analyzing untruncated members for each cluster. Live progress streams below." %>
+              <%= report.progress_message %>
             </p>
           </div>
         </div>
@@ -92,6 +92,64 @@
 
               <div class="markdown-report text-xs text-slate-700 leading-relaxed">
                 <%= render_markdown(summary.content) %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </details>
+    </section>
+  <% end %>
+
+  <!-- Collapsible Batch Analyses (Aggregation Phase) Section -->
+  <% sub_reports = report.cluster_sub_reports.ordered %>
+  <% if sub_reports.any? %>
+    <% position_by_group = report.cluster_report_summaries.index_by(&:cluster_group_id) %>
+    <section class="rounded-2xl border border-violet-200 bg-white p-6 shadow-sm space-y-4">
+      <details class="group" <%= "open" unless report.completed? %>>
+        <summary class="flex items-center justify-between cursor-pointer list-none select-none">
+          <div class="flex items-center gap-2.5">
+            <h3 class="text-base font-bold text-slate-900">
+              Batch Analyses (<%= sub_reports.size %> <%= 'batch'.pluralize(sub_reports.size) %>)
+            </h3>
+            <span class="inline-flex items-center rounded-full bg-violet-50 px-2 py-0.5 text-xs font-medium text-violet-700 border border-violet-200">
+              Aggregation Phase
+            </span>
+          </div>
+          <span class="text-xs font-semibold text-violet-600 group-open:rotate-180 transition-transform">
+            &#9660;
+          </span>
+        </summary>
+
+        <p class="text-xs text-slate-500 mt-2 mb-4 border-b border-slate-100 pb-3">
+          Mid-level narratives produced by aggregating clusters into batches. These are the inputs to the final deep synthesis.
+        </p>
+
+        <div class="space-y-4 pt-1">
+          <% sub_reports.each do |sub_report| %>
+            <% group_ids = Array(sub_report.cluster_group_ids) %>
+            <div class="rounded-xl border border-violet-100 bg-violet-50/30 p-4 space-y-2.5">
+              <div class="flex flex-wrap items-center justify-between gap-2 border-b border-violet-100 pb-2">
+                <div class="flex items-center gap-2">
+                  <span class="inline-flex items-center rounded-md bg-violet-100 px-2 py-0.5 text-xs font-bold text-violet-800">
+                    Batch #<%= sub_report.batch_index %>
+                  </span>
+                  <span class="rounded-full bg-white px-2 py-0.5 text-[11px] font-medium text-slate-600 border border-slate-200">
+                    <%= pluralize(group_ids.size, "cluster") %>
+                  </span>
+                </div>
+
+                <div class="flex flex-wrap gap-1">
+                  <% group_ids.each do |group_id| %>
+                    <% position = position_by_group[group_id]&.position %>
+                    <span class="rounded bg-white px-1.5 py-0.5 text-[10px] font-medium text-violet-700 border border-violet-200">
+                      Cluster #<%= position || group_id %>
+                    </span>
+                  <% end %>
+                </div>
+              </div>
+
+              <div class="markdown-report text-xs text-slate-700 leading-relaxed">
+                <%= render_markdown(sub_report.content) %>
               </div>
             </div>
           <% end %>

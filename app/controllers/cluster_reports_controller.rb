@@ -2,7 +2,7 @@
 
 class ClusterReportsController < ApplicationController
   before_action :set_snapshot, only: %i[create]
-  before_action :set_report, only: %i[show destroy]
+  before_action :set_report, only: %i[show destroy deep_synthesis]
 
   def index
     @reports = ClusterReport.includes(:cluster_snapshot).ordered
@@ -47,6 +47,24 @@ class ClusterReportsController < ApplicationController
       end
       format.turbo_stream { render turbo_stream: turbo_stream.remove("cluster_report_#{@report.id}") }
     end
+  end
+
+  def deep_synthesis
+    batch_size = params[:batch_size].to_i
+    batch_size = ClusterReport::DEFAULT_BATCH_SIZE if batch_size <= 0
+    batch_size = batch_size.clamp(ClusterReport::BATCH_SIZE_RANGE)
+
+    @deep_report = @report.cluster_snapshot.cluster_reports.create!(
+      prompt: @report.prompt,
+      status: ClusterReport::STATUS_PENDING,
+      is_detailed: true,
+      batch_size: batch_size
+    )
+
+    GenerateClusterReportJob.perform_later(@deep_report.id)
+
+    redirect_to cluster_report_path(@deep_report),
+                notice: "Detailed synthesis started in the background."
   end
 
   private

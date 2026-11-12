@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_12_180044) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_12_190000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -103,6 +103,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_12_180044) do
     t.string "phase", default: "queued", null: false
     t.integer "summarized_clusters_count", default: 0, null: false
     t.integer "total_clusters_count", default: 0, null: false
+    t.boolean "is_detailed", default: false, null: false
+    t.integer "batch_size"
+    t.integer "total_batches_count", default: 0, null: false
+    t.integer "aggregated_batches_count", default: 0, null: false
     t.index ["chat_id"], name: "index_cluster_reports_on_chat_id"
     t.index ["cluster_snapshot_id", "created_at"], name: "index_cluster_reports_on_cluster_snapshot_id_and_created_at"
     t.index ["cluster_snapshot_id"], name: "index_cluster_reports_on_cluster_snapshot_id"
@@ -119,6 +123,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_12_180044) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["target_type", "created_at"], name: "index_cluster_snapshots_on_target_type_and_created_at"
+  end
+
+  create_table "cluster_sub_reports", force: :cascade do |t|
+    t.bigint "cluster_report_id", null: false
+    t.bigint "chat_id"
+    t.integer "batch_index", default: 1, null: false
+    t.jsonb "cluster_group_ids", default: [], null: false
+    t.text "content", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["chat_id"], name: "index_cluster_sub_reports_on_chat_id"
+    t.index ["cluster_report_id", "batch_index"], name: "index_cluster_sub_reports_on_cluster_report_id_and_batch_index", unique: true
+    t.index ["cluster_report_id"], name: "index_cluster_sub_reports_on_cluster_report_id"
   end
 
   create_table "gods", force: :cascade do |t|
@@ -355,6 +372,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_12_180044) do
   add_foreign_key "cluster_report_summaries", "cluster_reports", on_delete: :cascade
   add_foreign_key "cluster_reports", "chats", on_delete: :nullify
   add_foreign_key "cluster_reports", "cluster_snapshots", on_delete: :cascade
+  add_foreign_key "cluster_sub_reports", "chats", on_delete: :nullify
+  add_foreign_key "cluster_sub_reports", "cluster_reports", on_delete: :cascade
   add_foreign_key "gods", "pantheons"
   add_foreign_key "messages", "chats"
   add_foreign_key "myths", "gods"
