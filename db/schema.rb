@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_12_155342) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_12_170953) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -72,6 +72,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_12_155342) do
     t.datetime "updated_at", null: false
     t.index ["cluster_group_id"], name: "index_cluster_memberships_on_cluster_group_id"
     t.index ["record_type", "record_id"], name: "index_cluster_memberships_on_record"
+  end
+
+  create_table "cluster_reports", force: :cascade do |t|
+    t.bigint "cluster_snapshot_id", null: false
+    t.bigint "chat_id"
+    t.string "title", null: false
+    t.text "prompt", null: false
+    t.string "status", default: "pending", null: false
+    t.text "content"
+    t.text "error_message"
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["chat_id"], name: "index_cluster_reports_on_chat_id"
+    t.index ["cluster_snapshot_id", "created_at"], name: "index_cluster_reports_on_cluster_snapshot_id_and_created_at"
+    t.index ["cluster_snapshot_id"], name: "index_cluster_reports_on_cluster_snapshot_id"
+    t.index ["status"], name: "index_cluster_reports_on_status"
   end
 
   create_table "cluster_snapshots", force: :cascade do |t|
@@ -315,6 +332,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_12_155342) do
   add_foreign_key "chats", "ruby_llm_models"
   add_foreign_key "cluster_groups", "cluster_snapshots", on_delete: :cascade
   add_foreign_key "cluster_memberships", "cluster_groups", on_delete: :cascade
+  add_foreign_key "cluster_reports", "chats", on_delete: :nullify
+  add_foreign_key "cluster_reports", "cluster_snapshots", on_delete: :cascade
   add_foreign_key "gods", "pantheons"
   add_foreign_key "messages", "chats"
   add_foreign_key "myths", "gods"

@@ -66,6 +66,7 @@
             <th class="px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-600">Granularity</th>
             <th class="px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-600">Clusters</th>
             <th class="px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-600">Total Items</th>
+            <th class="px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-600">Reports</th>
             <th class="px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-600">Created</th>
             <th class="px-5 py-3.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-600">Actions</th>
           </tr>
@@ -89,6 +90,11 @@
               </td>
               <td class="px-5 py-4 text-sm text-slate-600">
                 <%= snapshot.items_count %>
+              </td>
+              <td class="px-5 py-4 text-sm text-slate-600">
+                <span class="inline-flex items-center rounded-md bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-700">
+                  <%= snapshot.cluster_reports.size %>
+                </span>
               </td>
               <td class="px-5 py-4 text-xs text-slate-500">
                 <%= snapshot.created_at.strftime("%b %d, %Y %H:%M") %>

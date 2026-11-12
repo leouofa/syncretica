@@ -3,6 +3,7 @@
 class ClusterSnapshot < ApplicationRecord
   has_many :cluster_groups, dependent: :destroy
   has_many :cluster_memberships, through: :cluster_groups
+  has_many :cluster_reports, dependent: :destroy
 
   validates :target_type, presence: true, inclusion: { in: %w[God Myth] }
   validates :level, presence: true, inclusion: { in: 1..15 }

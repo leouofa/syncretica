@@ -1,1 +1,75 @@
 @import "tailwindcss";
+
+/* Markdown Report Typography */
+.markdown-report {
+  @apply text-slate-800 leading-relaxed text-sm;
+}
+
+.markdown-report h1 {
+  @apply text-2xl font-bold text-slate-900 mt-6 mb-3 pb-2 border-b border-slate-200 first:mt-0;
+}
+
+.markdown-report h2 {
+  @apply text-xl font-bold text-slate-900 mt-5 mb-2.5 pb-1 border-b border-slate-100;
+}
+
+.markdown-report h3 {
+  @apply text-base font-semibold text-slate-900 mt-4 mb-2;
+}
+
+.markdown-report h4 {
+  @apply text-sm font-semibold text-slate-800 mt-3 mb-1.5;
+}
+
+.markdown-report p {
+  @apply mb-3.5;
+}
+
+.markdown-report ul {
+  @apply list-disc list-outside pl-5 mb-3.5 space-y-1;
+}
+
+.markdown-report ol {
+  @apply list-decimal list-outside pl-5 mb-3.5 space-y-1;
+}
+
+.markdown-report li {
+  @apply text-slate-700;
+}
+
+.markdown-report blockquote {
+  @apply border-l-4 border-indigo-400 bg-indigo-50/50 pl-4 py-2 my-4 italic text-slate-700 rounded-r-md;
+}
+
+.markdown-report hr {
+  @apply my-6 border-slate-200;
+}
+
+.markdown-report strong {
+  @apply font-bold text-slate-900;
+}
+
+.markdown-report code {
+  @apply rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs text-indigo-700;
+}
+
+.markdown-report pre {
+  @apply my-3 overflow-x-auto rounded-lg bg-slate-900 p-3.5 text-xs text-slate-100 font-mono;
+}
+
+.markdown-report pre code {
+  @apply bg-transparent text-slate-100 p-0;
+}
+
+.markdown-report table {
+  @apply my-4 w-full divide-y divide-slate-200 text-left border border-slate-200 rounded-lg overflow-hidden;
+}
+
+.markdown-report th {
+  @apply bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700;
+}
+
+.markdown-report td {
+  @apply px-3 py-2 text-xs border-t border-slate-100;
+}
+

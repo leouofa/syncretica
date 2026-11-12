@@ -1,5 +1,7 @@
 <% content_for :title, "#{@snapshot.title} | Syncretica" %>
 
+<%= turbo_stream_from "cluster_snapshot_#{@snapshot.id}_reports" %>
+
 <div class="w-full max-w-6xl mx-auto space-y-8 pb-16">
   <header class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between border-b border-slate-200 pb-6">
     <div>
@@ -32,10 +34,13 @@
       <div class="mt-1 text-xl font-bold text-slate-900"><%= @snapshot.items_count %></div>
     </div>
     <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div class="text-xs font-semibold uppercase tracking-wider text-slate-500">Distance Threshold</div>
-      <div class="mt-1 text-xl font-bold text-slate-600">&le; <%= @snapshot.distance_threshold %></div>
+      <div class="text-xs font-semibold uppercase tracking-wider text-slate-500">Reports Generated</div>
+      <div class="mt-1 text-xl font-bold text-slate-700"><%= @reports.size %></div>
     </div>
   </div>
+
+  <!-- LLM Reports Section -->
+  <%= render "cluster_snapshots/reports_section", snapshot: @snapshot, reports: @reports, new_report: @new_report %>
 
   <!-- Cluster Groups -->
   <div class="space-y-6">

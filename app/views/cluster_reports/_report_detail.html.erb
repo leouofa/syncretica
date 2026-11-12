@@ -1,0 +1,30 @@
+<div id="cluster_report_detail_<%= report.id %>" class="space-y-6">
+  <!-- Status banner if in progress or failed -->
+  <% if report.running? || report.pending? %>
+    <div class="rounded-xl border border-indigo-200 bg-indigo-50/70 p-5 text-indigo-900 shadow-sm flex items-center gap-4">
+      <svg class="h-6 w-6 animate-spin text-indigo-600 flex-shrink-0" viewBox="0 0 24 24" fill="none">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+      </svg>
+      <div>
+        <h4 class="font-bold text-sm">Generating Comparative Report...</h4>
+        <p class="text-xs text-indigo-700 mt-0.5">
+          The agent is currently synthesizing cross-cluster themes and archetype patterns. This report will update live once processing finishes.
+        </p>
+      </div>
+    </div>
+  <% elsif report.failed? %>
+    <div class="rounded-xl border border-rose-200 bg-rose-50 p-5 text-rose-900 shadow-sm">
+      <h4 class="font-bold text-sm">Analysis Generation Failed</h4>
+      <p class="text-xs text-rose-700 mt-1"><%= report.error_message %></p>
+    </div>
+  <% end %>
+
+  <% if report.completed? %>
+    <article class="rounded-2xl border border-slate-200 bg-white p-8 sm:p-10 shadow-sm">
+      <div class="markdown-report">
+        <%= render_markdown(report.content) %>
+      </div>
+    </article>
+  <% end %>
+</div>
