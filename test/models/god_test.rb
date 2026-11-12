@@ -102,4 +102,18 @@ class GodTest < ActiveSupport::TestCase
       greek.destroy!
     end
   end
+
+  test "embedding_input formats pantheon, name, description, and themes" do
+    greek = Pantheon.create!(name: "Greek", description: "Olympian deities.")
+    god = God.create!(pantheon: greek, name: "Zeus", description: "Sky father.", themes: [ "sky", "thunder" ])
+
+    expected = <<~TEXT.chomp
+      God: Zeus (Greek)
+      Description: Sky father.
+      Themes: sky, thunder
+    TEXT
+
+    assert_equal expected, god.embedding_input
+    assert_not god.embedded?
+  end
 end

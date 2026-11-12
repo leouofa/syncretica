@@ -1,0 +1,48 @@
+<% content_for :title, "Settings | Syncretica" %>
+
+<%= turbo_stream_from GenerateAllEmbeddingsJob::STREAM_NAME %>
+
+<div class="w-full max-w-4xl mx-auto space-y-8 pb-16">
+  <header class="border-b border-slate-200 pb-6">
+    <h1 class="text-3xl font-bold tracking-tight text-slate-900">Settings</h1>
+    <p class="mt-2 text-sm text-slate-600">
+      Inspect embedding configuration and bulk-generate vector embeddings for Gods and Myths.
+    </p>
+  </header>
+
+  <% if notice.present? %>
+    <p role="status" class="rounded-md border border-indigo-200 bg-indigo-50 px-4 py-2.5 text-sm font-medium text-indigo-800">
+      <%= notice %>
+    </p>
+  <% end %>
+
+  <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+    <h2 class="text-base font-semibold text-slate-900">Embedding Configuration</h2>
+    <dl class="grid grid-cols-1 gap-4 sm:grid-cols-3 text-sm">
+      <div>
+        <dt class="text-xs font-medium uppercase tracking-wider text-slate-500">Model</dt>
+        <dd class="mt-1 font-mono text-xs text-slate-900"><%= @embedding_config[:model] %></dd>
+      </div>
+      <div>
+        <dt class="text-xs font-medium uppercase tracking-wider text-slate-500">API Base</dt>
+        <dd class="mt-1 font-mono text-xs text-slate-900 break-all"><%= @embedding_config[:api_base] %></dd>
+      </div>
+      <div>
+        <dt class="text-xs font-medium uppercase tracking-wider text-slate-500">Dimensions</dt>
+        <dd class="mt-1 text-xs font-medium text-slate-900"><%= @embedding_config[:dimensions] %></dd>
+      </div>
+    </dl>
+  </section>
+
+  <div class="space-y-6">
+    <%= render "settings/embedding_section",
+               model_type: "God",
+               stats: @god_stats,
+               running: false %>
+
+    <%= render "settings/embedding_section",
+               model_type: "Myth",
+               stats: @myth_stats,
+               running: false %>
+  </div>
+</div>

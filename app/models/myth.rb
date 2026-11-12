@@ -1,12 +1,19 @@
 # frozen_string_literal: true
 
 class Myth < ApplicationRecord
+  include Embeddable
+
   belongs_to :god
 
   normalizes :themes, with: ->(value) { normalize_themes(value) }
 
   validates :god_id, uniqueness: true
   validate :themes_must_be_string_hash
+
+  def embedding_input
+    theme_lines = themes.map { |title, description| "#{title}: #{description}" }
+    [ "Myth of #{god.name} (#{god.pantheon.name})", *theme_lines ].join("\n")
+  end
 
   # Returns [pantheon, Array<Myth>] pairs ordered by pantheon name then god name.
   def self.grouped_by_pantheon

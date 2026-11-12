@@ -10,9 +10,10 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_11_040000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_12_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+  enable_extension "vector"
 
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
@@ -60,7 +61,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_11_040000) do
     t.jsonb "themes", default: [], null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.vector "embedding", limit: 1024
+    t.string "embedding_model"
+    t.datetime "embedded_at"
     t.index "pantheon_id, lower((name)::text)", name: "index_gods_on_pantheon_id_and_lower_name", unique: true
+    t.index ["embedding"], name: "index_gods_on_embedding", opclass: :vector_cosine_ops, using: :hnsw
     t.index ["pantheon_id"], name: "index_gods_on_pantheon_id"
   end
 
@@ -89,6 +94,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_11_040000) do
     t.jsonb "themes", default: {}, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.vector "embedding", limit: 1024
+    t.string "embedding_model"
+    t.datetime "embedded_at"
+    t.index ["embedding"], name: "index_myths_on_embedding", opclass: :vector_cosine_ops, using: :hnsw
     t.index ["god_id"], name: "index_myths_on_god_id", unique: true
   end
 

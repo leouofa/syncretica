@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class God < ApplicationRecord
+  include Embeddable
+
   belongs_to :pantheon
   has_one :myth, dependent: :destroy
 
@@ -13,6 +15,15 @@ class God < ApplicationRecord
   validate :themes_must_be_string_array
 
   scope :ordered, -> { order(:name) }
+
+  def embedding_input
+    lines = [
+      "God: #{name} (#{pantheon.name})",
+      "Description: #{description}"
+    ]
+    lines << "Themes: #{themes.join(', ')}" if themes.any?
+    lines.join("\n")
+  end
 
   # Returns [pantheon, Array<God>] pairs ordered by pantheon name then god name.
   def self.grouped_by_pantheon

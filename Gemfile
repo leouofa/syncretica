@@ -47,6 +47,9 @@ gem "image_processing", "~> 1.2"
 # Unified Ruby interface for LLMs
 gem "ruby_llm"
 
+# Nearest-neighbor vector search with pgvector
+gem "neighbor"
+
 group :development, :test do
   # Load environment variables from .env in development and test
   gem "dotenv-rails"

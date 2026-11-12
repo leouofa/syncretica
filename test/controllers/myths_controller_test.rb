@@ -22,4 +22,43 @@ class MythsControllerTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to myths_url
   end
+
+  test "show renders myth details and Generate Embedding button" do
+    greek = Pantheon.create!(name: "Greek", description: "Olympian deities.")
+    god = God.create!(pantheon: greek, name: "Zeus", description: "King of Olympus.")
+    myth = Myth.create!(god: god, themes: { "Sovereignty" => "Supreme Olympian rule." })
+
+    get myth_url(myth)
+
+    assert_response :success
+    assert_match "Myths of Zeus", response.body
+    assert_match "Generate Embedding", response.body
+    assert_match "Not generated", response.body
+  end
+
+  test "generate_embedding enqueues GenerateEmbeddingJob and responds with turbo stream" do
+    greek = Pantheon.create!(name: "Greek", description: "Olympian deities.")
+    god = God.create!(pantheon: greek, name: "Zeus", description: "King of Olympus.")
+    myth = Myth.create!(god: god, themes: { "Sovereignty" => "Supreme Olympian rule." })
+
+    assert_enqueued_with(job: GenerateEmbeddingJob, args: [ "Myth", myth.id ]) do
+      post generate_embedding_myth_url(myth), as: :turbo_stream
+    end
+
+    assert_response :success
+    assert_equal "text/vnd.turbo-stream.html", response.media_type
+    assert_match "Generating Embedding...", response.body
+  end
+
+  test "generate_embedding enqueues GenerateEmbeddingJob and redirects for HTML requests" do
+    greek = Pantheon.create!(name: "Greek", description: "Olympian deities.")
+    god = God.create!(pantheon: greek, name: "Zeus", description: "King of Olympus.")
+    myth = Myth.create!(god: god, themes: { "Sovereignty" => "Supreme Olympian rule." })
+
+    assert_enqueued_with(job: GenerateEmbeddingJob, args: [ "Myth", myth.id ]) do
+      post generate_embedding_myth_url(myth)
+    end
+
+    assert_redirected_to myth_url(myth)
+  end
 end
