@@ -76,14 +76,14 @@
               <div class="rounded-lg border border-slate-100 bg-slate-50/60 p-2.5 text-xs">
                 <% if record.is_a?(God) %>
                   <div class="font-semibold text-slate-900 truncate">
-                    <%= link_to record.name, god_path(record), class: "text-indigo-600 hover:underline" %>
+                    <%= link_to record.name, god_path(record), data: { turbo_frame: "cluster_modal" }, class: "text-indigo-600 hover:underline" %>
                   </div>
                   <div class="text-[11px] text-slate-500 truncate">
                     <%= record.pantheon&.name %>
                   </div>
                 <% elsif record.is_a?(Myth) %>
                   <div class="font-semibold text-slate-900 truncate">
-                    <%= link_to "#{record.god&.name} Myth", myth_path(record), class: "text-indigo-600 hover:underline" %>
+                    <%= link_to "#{record.god&.name} Myth", myth_path(record), data: { turbo_frame: "cluster_modal" }, class: "text-indigo-600 hover:underline" %>
                   </div>
                   <div class="text-[11px] text-slate-500 truncate">
                     <%= record.god&.pantheon&.name %>

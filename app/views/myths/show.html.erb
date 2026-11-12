@@ -1,38 +1,42 @@
-<% content_for :title, "#{@myth.god.name} Myth | Myths | Syncretica" %>
+<% if turbo_frame_request? && turbo_frame_request_id.in?(%w[cluster_modal modal]) %>
+  <%= render "myths/modal", myth: @myth %>
+<% else %>
+  <% content_for :title, "#{@myth.god.name} Myth | Myths | Syncretica" %>
 
-<%= turbo_stream_from GenerateEmbeddingJob.stream_name_for(@myth) %>
+  <%= turbo_stream_from GenerateEmbeddingJob.stream_name_for(@myth) %>
 
-<div class="w-full max-w-4xl mx-auto space-y-8 pb-16">
-  <div class="flex items-center justify-between">
-    <%= link_to "← Back to Myths", myths_path, class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
-    <%= link_to "View God (#{@myth.god.name}) →", god_path(@myth.god), class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
+  <div class="w-full max-w-4xl mx-auto space-y-8 pb-16">
+    <div class="flex items-center justify-between">
+      <%= link_to "← Back to Myths", myths_path, class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
+      <%= link_to "View God (#{@myth.god.name}) →", god_path(@myth.god), class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
+    </div>
+
+    <header class="border-b border-slate-200 pb-6">
+      <p class="text-xs font-semibold uppercase tracking-wider text-indigo-600"><%= @myth.god.pantheon.name %> Pantheon</p>
+      <h1 class="mt-1 text-3xl font-bold tracking-tight text-slate-900">Myths of <%= @myth.god.name %></h1>
+    </header>
+
+    <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      <h2 class="text-base font-semibold text-slate-900 mb-4">Mythical Themes</h2>
+      <dl class="divide-y divide-slate-100" aria-label="Mythical themes for <%= @myth.god.name %>">
+        <% @myth.themes.each do |title, description| %>
+          <div class="py-3 first:pt-0 last:pb-0 grid grid-cols-1 gap-1 sm:grid-cols-12 sm:gap-4">
+            <dt class="sm:col-span-4 text-sm font-semibold text-slate-900">
+              <%= title %>
+            </dt>
+            <dd class="sm:col-span-8 text-sm leading-relaxed text-slate-600">
+              <%= description %>
+            </dd>
+          </div>
+        <% end %>
+      </dl>
+    </section>
+
+    <%= render "shared/embedding_panel",
+               record: @myth,
+               action_path: generate_embedding_myth_path(@myth),
+               running: false,
+               status_message: notice,
+               status_kind: (notice.present? ? :info : nil) %>
   </div>
-
-  <header class="border-b border-slate-200 pb-6">
-    <p class="text-xs font-semibold uppercase tracking-wider text-indigo-600"><%= @myth.god.pantheon.name %> Pantheon</p>
-    <h1 class="mt-1 text-3xl font-bold tracking-tight text-slate-900">Myths of <%= @myth.god.name %></h1>
-  </header>
-
-  <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-    <h2 class="text-base font-semibold text-slate-900 mb-4">Mythical Themes</h2>
-    <dl class="divide-y divide-slate-100" aria-label="Mythical themes for <%= @myth.god.name %>">
-      <% @myth.themes.each do |title, description| %>
-        <div class="py-3 first:pt-0 last:pb-0 grid grid-cols-1 gap-1 sm:grid-cols-12 sm:gap-4">
-          <dt class="sm:col-span-4 text-sm font-semibold text-slate-900">
-            <%= title %>
-          </dt>
-          <dd class="sm:col-span-8 text-sm leading-relaxed text-slate-600">
-            <%= description %>
-          </dd>
-        </div>
-      <% end %>
-    </dl>
-  </section>
-
-  <%= render "shared/embedding_panel",
-             record: @myth,
-             action_path: generate_embedding_myth_path(@myth),
-             running: false,
-             status_message: notice,
-             status_kind: (notice.present? ? :info : nil) %>
-</div>
+<% end %>

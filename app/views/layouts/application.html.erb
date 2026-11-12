@@ -67,5 +67,7 @@
     <main class="container mx-auto mt-10 px-5 flex">
       <%= yield %>
     </main>
+
+    <%= turbo_frame_tag "cluster_modal" %>
   </body>
 </html>
