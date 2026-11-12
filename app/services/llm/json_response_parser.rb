@@ -5,8 +5,7 @@ module Llm
   # markdown code fences that local models sometimes emit.
   class JsonResponseParser
     def self.extract_list(response, key:)
-      payload = response.parsed
-      payload ||= parse(response.content)
+      payload = parsed_payload(response)
 
       case payload
       when Hash
@@ -17,6 +16,23 @@ module Llm
         []
       end
     end
+
+    def self.extract_hash(response, key: nil)
+      payload = parsed_payload(response)
+      return {} unless payload.is_a?(Hash)
+
+      if key.present?
+        nested = payload[key.to_s]
+        return nested if nested.is_a?(Hash)
+      end
+
+      payload
+    end
+
+    def self.parsed_payload(response)
+      response.parsed || parse(response.content)
+    end
+    private_class_method :parsed_payload
 
     def self.parse(raw_content)
       text = raw_content.to_s.strip

@@ -55,4 +55,39 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert_match "protection", response.body
     assert_match "kingship", response.body
   end
+
+  test "myths renders empty state, populate button, and top navbar link when no myths exist" do
+    get myths_url
+
+    assert_response :success
+    assert_select "nav a[href=?]", myths_path, text: "Myths"
+    assert_select "h1", "Myths"
+    assert_select "button", /Populate Myths/
+    assert_match "No myths yet", response.body
+  end
+
+  test "myths lists all myths in a table grouped by pantheon headers" do
+    greek = Pantheon.create!(name: "Greek", description: "Olympian deities.")
+    norse = Pantheon.create!(name: "Norse", description: "Asgardian deities.")
+
+    thor = God.create!(pantheon: norse, name: "Thor", description: "Wielder of Mjolnir.")
+    zeus = God.create!(pantheon: greek, name: "Zeus", description: "Ruler of Olympus.")
+    athena = God.create!(pantheon: greek, name: "Athena", description: "Goddess of wisdom.")
+
+    Myth.create!(god: thor, themes: { "Defense of Midgard" => "Protecting realms from giants." })
+    Myth.create!(god: zeus, themes: { "Breaking the Generational Curse" => "Overthrowing Cronus." })
+    Myth.create!(god: athena, themes: { "Strategic Wisdom" => "Guiding heroes through reason." })
+
+    get myths_url
+
+    assert_response :success
+    assert_select "table tbody", count: 2
+    assert_select "table tbody tr th", /Greek/
+    assert_select "table tbody tr th", /Norse/
+    assert_operator response.body.index("Greek"), :<, response.body.index("Norse")
+    assert_operator response.body.index("Athena"), :<, response.body.index("Zeus")
+    assert_match "Breaking the Generational Curse", response.body
+    assert_match "Overthrowing Cronus.", response.body
+    assert_match "Defense of Midgard", response.body
+  end
 end

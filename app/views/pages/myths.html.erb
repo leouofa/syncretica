@@ -1,0 +1,30 @@
+<% content_for :title, "Myths | Syncretica" %>
+
+<%= turbo_stream_from PopulateMythsJob::STREAM_NAME %>
+
+<div class="w-full max-w-6xl mx-auto space-y-8 pb-16">
+  <header class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between border-b border-slate-200 pb-6">
+    <div>
+      <h1 class="text-3xl font-bold tracking-tight text-slate-900">Myths</h1>
+      <p class="mt-2 text-sm text-slate-600">
+        Explore core mythical themes for every cataloged deity or ask the discovery agent to synthesize and update myths by god.
+      </p>
+    </div>
+
+    <div class="shrink-0">
+      <%= render "pages/populate_controls",
+                 target_id: "myths_populate_controls",
+                 action_path: populate_myths_path,
+                 idle_label: "Populate Myths",
+                 running_label: "Discovering Myths...",
+                 running: false,
+                 status_message: notice,
+                 status_kind: (notice.present? ? :info : nil) %>
+    </div>
+  </header>
+
+  <%= render "pages/myths_list",
+             pantheon_groups: @pantheon_groups,
+             total_myths_count: @total_myths_count,
+             gods_count: @gods_count %>
+</div>

@@ -17,12 +17,17 @@ Rails.application.routes.draw do
   # Defines the root path route ("/")
   root "pages#home"
   get "gods" => "pages#gods", as: :gods
+  get "myths" => "pages#myths", as: :myths
 
   resources :pantheons, only: [] do
     post :populate, on: :collection
   end
 
   resources :gods, only: [] do
+    post :populate, on: :collection
+  end
+
+  resources :myths, only: [] do
     post :populate, on: :collection
   end
 end
