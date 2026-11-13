@@ -33,7 +33,7 @@
       </div>
     </div>
 
-    <%= form_with model: [snapshot, new_report], local: true, class: "space-y-3" do |f| %>
+    <%= form_with model: [snapshot, new_report], data: { action: "submit->prompt-preset#clear" }, class: "space-y-3" do |f| %>
       <div>
         <label for="cluster_report_prompt" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
           Research Inquiry / Analytical Prompt

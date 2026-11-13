@@ -44,17 +44,32 @@ class ClusterReportsControllerTest < ActionDispatch::IntegrationTest
       }
     end
 
-    assert_redirected_to cluster_snapshot_url(@snapshot)
     created = ClusterReport.last
+    assert_redirected_to cluster_report_url(created)
     assert_equal "Analyze chaos vs order", created.prompt
     assert_equal "pending", created.status
   end
 
+  test "should create report with blank prompt defaulting to DEFAULT_PROMPT" do
+    assert_enqueued_with(job: GenerateClusterReportJob) do
+      post cluster_snapshot_cluster_reports_url(@snapshot), params: {
+        cluster_report: { prompt: "" }
+      }
+    end
+
+    created = ClusterReport.last
+    assert_redirected_to cluster_report_url(created)
+    assert_equal ClusterReport::DEFAULT_PROMPT, created.prompt
+    assert_equal "pending", created.status
+  end
+
   test "should destroy report" do
+    title = @report.title
     assert_difference("ClusterReport.count", -1) do
       delete cluster_report_url(@report)
     end
-    assert_redirected_to cluster_snapshot_url(@snapshot)
+    assert_redirected_to cluster_reports_url
+    assert_equal "Report '#{title}' was successfully deleted.", flash[:notice]
   end
 
   test "should create a detailed report and enqueue job" do
@@ -97,16 +112,48 @@ class ClusterReportsControllerTest < ActionDispatch::IntegrationTest
     assert_equal ClusterReport::DEFAULT_BATCH_SIZE, ClusterReport.last.batch_size
   end
 
-  test "should render a detailed report with batch analyses" do
+  test "should render a detailed report with batch analyses, source banner, and without generation form" do
+    parent = @report
     group = @snapshot.cluster_groups.create!(name: "Solar Realm", shared_themes: [ "sun" ], size: 1)
-    @report.update!(is_detailed: true, batch_size: 5)
-    @report.cluster_report_summaries.create!(cluster_group: group, position: 1, content: "Cluster analysis")
-    @report.cluster_sub_reports.create!(batch_index: 1, cluster_group_ids: [ group.id ], content: "Batch narrative")
+    detailed_report = @snapshot.cluster_reports.create!(
+      prompt: parent.prompt,
+      status: "completed",
+      is_detailed: true,
+      batch_size: 5,
+      parent_report: parent,
+      content: "# Detailed Patterns\nBatch synthesis content."
+    )
+    detailed_report.cluster_report_summaries.create!(cluster_group: group, position: 1, content: "Cluster analysis")
+    detailed_report.cluster_sub_reports.create!(batch_index: 1, cluster_group_ids: [ group.id ], content: "Batch narrative")
 
-    get cluster_report_url(@report)
+    get cluster_report_url(detailed_report)
     assert_response :success
     assert_includes response.body, "Batch Analyses"
     assert_includes response.body, "Batch #1"
+    assert_includes response.body, "Detailed Synthesis Variation"
+    assert_includes response.body, "View Source Report"
+    assert_select "a[href=?]", cluster_report_path(parent), text: "View Source Report"
+    assert_not_includes response.body, "Generate Detailed Report"
+  end
+
+  test "should render detailed synthesis generation form on completed base report" do
+    get cluster_report_url(@report)
+    assert_response :success
     assert_includes response.body, "Detailed Synthesis"
+    assert_includes response.body, "Generate Detailed Report"
+    assert_select "button", text: /Generate Detailed Report/
+  end
+
+  test "deep synthesis cannot be run from an already detailed report" do
+    @report.update!(is_detailed: true, batch_size: 5)
+
+    assert_no_enqueued_jobs(only: GenerateClusterReportJob) do
+      assert_no_difference("ClusterReport.count") do
+        post deep_synthesis_cluster_report_url(@report), params: { batch_size: 5 }
+      end
+    end
+
+    assert_redirected_to cluster_report_url(@report)
+    assert_equal "A detailed report cannot generate another detailed report.", flash[:alert]
   end
 end

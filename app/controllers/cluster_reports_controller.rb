@@ -28,28 +28,33 @@ class ClusterReportsController < ApplicationController
 
     respond_to do |format|
       format.html do
-        redirect_to cluster_snapshot_path(@snapshot),
+        redirect_to cluster_report_path(@report),
+                    status: :see_other,
                     notice: "LLM Report analysis started in the background."
       end
-      format.turbo_stream
+      format.turbo_stream do
+        redirect_to cluster_report_path(@report),
+                    status: :see_other,
+                    notice: "LLM Report analysis started in the background."
+      end
     end
   end
 
   def destroy
-    snapshot = @report.cluster_snapshot
     title = @report.title
     @report.destroy!
 
-    respond_to do |format|
-      format.html do
-        redirect_back fallback_location: cluster_snapshot_path(snapshot),
-                      notice: "Report '#{title}' was successfully deleted."
-      end
-      format.turbo_stream { render turbo_stream: turbo_stream.remove("cluster_report_#{@report.id}") }
-    end
+    redirect_to cluster_reports_path,
+                status: :see_other,
+                notice: "Report '#{title}' was successfully deleted."
   end
 
   def deep_synthesis
+    if @report.detailed?
+      redirect_to cluster_report_path(@report), alert: "A detailed report cannot generate another detailed report."
+      return
+    end
+
     batch_size = params[:batch_size].to_i
     batch_size = ClusterReport::DEFAULT_BATCH_SIZE if batch_size <= 0
     batch_size = batch_size.clamp(ClusterReport::BATCH_SIZE_RANGE)

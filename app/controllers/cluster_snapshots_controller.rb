@@ -12,7 +12,7 @@ class ClusterSnapshotsController < ApplicationController
   def show
     @cluster_groups = @snapshot.cluster_groups.by_size.includes(cluster_memberships: :record)
     @reports = @snapshot.cluster_reports.ordered
-    @new_report = @snapshot.cluster_reports.build(prompt: ClusterReport::DEFAULT_PROMPT)
+    @new_report = @snapshot.cluster_reports.build
   end
 
   def destroy
