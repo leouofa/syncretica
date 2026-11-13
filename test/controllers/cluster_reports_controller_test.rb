@@ -44,9 +44,22 @@ class ClusterReportsControllerTest < ActionDispatch::IntegrationTest
       }
     end
 
-    assert_redirected_to cluster_snapshot_url(@snapshot)
     created = ClusterReport.last
+    assert_redirected_to cluster_report_url(created)
     assert_equal "Analyze chaos vs order", created.prompt
+    assert_equal "pending", created.status
+  end
+
+  test "should create report with blank prompt defaulting to DEFAULT_PROMPT" do
+    assert_enqueued_with(job: GenerateClusterReportJob) do
+      post cluster_snapshot_cluster_reports_url(@snapshot), params: {
+        cluster_report: { prompt: "" }
+      }
+    end
+
+    created = ClusterReport.last
+    assert_redirected_to cluster_report_url(created)
+    assert_equal ClusterReport::DEFAULT_PROMPT, created.prompt
     assert_equal "pending", created.status
   end
 

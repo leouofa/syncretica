@@ -28,10 +28,15 @@ class ClusterReportsController < ApplicationController
 
     respond_to do |format|
       format.html do
-        redirect_to cluster_snapshot_path(@snapshot),
+        redirect_to cluster_report_path(@report),
+                    status: :see_other,
                     notice: "LLM Report analysis started in the background."
       end
-      format.turbo_stream
+      format.turbo_stream do
+        redirect_to cluster_report_path(@report),
+                    status: :see_other,
+                    notice: "LLM Report analysis started in the background."
+      end
     end
   end
 

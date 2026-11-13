@@ -21,10 +21,13 @@ class ClusterSnapshotsControllerTest < ActionDispatch::IntegrationTest
     assert_select "td", text: /Fixture Snapshot/
   end
 
-  test "GET /cluster_snapshots/:id shows snapshot details" do
+  test "GET /cluster_snapshots/:id shows snapshot details and an initially empty prompt" do
     get cluster_snapshot_path(@snapshot)
     assert_response :success
     assert_select "h1", @snapshot.title
+    assert_select "textarea#cluster_report_prompt" do |elements|
+      assert_equal "", elements.first.text.strip
+    end
   end
 
   test "DELETE /cluster_snapshots/:id deletes snapshot" do

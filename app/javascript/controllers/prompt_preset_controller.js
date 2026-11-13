@@ -12,4 +12,12 @@ export default class extends Controller {
       this.promptInputTarget.focus()
     }
   }
+
+  clear() {
+    setTimeout(() => {
+      if (this.hasPromptInputTarget) {
+        this.promptInputTarget.value = ""
+      }
+    }, 0)
+  }
 }
