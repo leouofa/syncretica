@@ -112,7 +112,7 @@ class ClusterReportsControllerTest < ActionDispatch::IntegrationTest
     assert_equal ClusterReport::DEFAULT_BATCH_SIZE, ClusterReport.last.batch_size
   end
 
-  test "should render a detailed report with batch analyses" do
+  test "should render a detailed report with batch analyses and without detailed synthesis generation form" do
     group = @snapshot.cluster_groups.create!(name: "Solar Realm", shared_themes: [ "sun" ], size: 1)
     @report.update!(is_detailed: true, batch_size: 5)
     @report.cluster_report_summaries.create!(cluster_group: group, position: 1, content: "Cluster analysis")
@@ -122,6 +122,20 @@ class ClusterReportsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_includes response.body, "Batch Analyses"
     assert_includes response.body, "Batch #1"
-    assert_includes response.body, "Detailed Synthesis"
+    assert_not_includes response.body, "Generate Detailed Report"
+    assert_not_includes response.body, "Detailed Synthesis"
+  end
+
+  test "deep synthesis cannot be run from an already detailed report" do
+    @report.update!(is_detailed: true, batch_size: 5)
+
+    assert_no_enqueued_jobs(only: GenerateClusterReportJob) do
+      assert_no_difference("ClusterReport.count") do
+        post deep_synthesis_cluster_report_url(@report), params: { batch_size: 5 }
+      end
+    end
+
+    assert_redirected_to cluster_report_url(@report)
+    assert_equal "A detailed report cannot generate another detailed report.", flash[:alert]
   end
 end

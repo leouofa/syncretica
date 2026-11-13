@@ -50,6 +50,11 @@ class ClusterReportsController < ApplicationController
   end
 
   def deep_synthesis
+    if @report.detailed?
+      redirect_to cluster_report_path(@report), alert: "A detailed report cannot generate another detailed report."
+      return
+    end
+
     batch_size = params[:batch_size].to_i
     batch_size = ClusterReport::DEFAULT_BATCH_SIZE if batch_size <= 0
     batch_size = batch_size.clamp(ClusterReport::BATCH_SIZE_RANGE)

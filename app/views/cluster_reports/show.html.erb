@@ -40,8 +40,8 @@
     <div class="text-slate-800 text-sm font-medium">&ldquo;<%= @report.prompt %>&rdquo;</div>
   </div>
 
-  <!-- Hierarchical Detailed Synthesis -->
-  <% if @report.completed? %>
+  <% if @report.completed? && !@report.detailed? %>
+    <!-- Hierarchical Detailed Synthesis -->
     <div class="rounded-xl border border-violet-200 bg-violet-50/40 p-5 space-y-3">
       <div>
         <div class="flex items-center gap-2">
