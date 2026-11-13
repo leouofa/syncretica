@@ -41,17 +41,12 @@ class ClusterReportsController < ApplicationController
   end
 
   def destroy
-    snapshot = @report.cluster_snapshot
     title = @report.title
     @report.destroy!
 
-    respond_to do |format|
-      format.html do
-        redirect_back fallback_location: cluster_snapshot_path(snapshot),
-                      notice: "Report '#{title}' was successfully deleted."
-      end
-      format.turbo_stream { render turbo_stream: turbo_stream.remove("cluster_report_#{@report.id}") }
-    end
+    redirect_to cluster_reports_path,
+                status: :see_other,
+                notice: "Report '#{title}' was successfully deleted."
   end
 
   def deep_synthesis

@@ -64,10 +64,12 @@ class ClusterReportsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should destroy report" do
+    title = @report.title
     assert_difference("ClusterReport.count", -1) do
       delete cluster_report_url(@report)
     end
-    assert_redirected_to cluster_snapshot_url(@snapshot)
+    assert_redirected_to cluster_reports_url
+    assert_equal "Report '#{title}' was successfully deleted.", flash[:notice]
   end
 
   test "should create a detailed report and enqueue job" do
