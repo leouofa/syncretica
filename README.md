@@ -1,4 +1,19 @@
+<p align="center">
+  <img src="docs/images/logo.jpg" alt="Syncretica Logo" width="600" />
+</p>
+
 # Syncretica: A Computational Laboratory for Comparative Mythology, Historical Theology, and Cognitive Archaeology
+
+[![Ruby](https://img.shields.io/badge/Ruby-3.4%2B-CC342D?logo=ruby&logoColor=white)](https://www.ruby-lang.org/)
+[![Rails 8.1+](https://img.shields.io/badge/Rails-8.1%2B-red.svg?logo=rubyonrails&logoColor=white)](https://rubyonrails.org)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16%2B-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![pgvector](https://img.shields.io/badge/pgvector-1024--dim_HNSW-0284C7.svg)](https://github.com/pgvector/pgvector)
+[![Ollama](https://img.shields.io/badge/Ollama-Local_Inference-black?logo=ollama&logoColor=white)](https://ollama.com)
+[![RubyLLM](https://img.shields.io/badge/RubyLLM-Agent_Orchestration-9333EA.svg)](https://github.com/flavorjones/ruby-llm)
+[![Sidekiq](https://img.shields.io/badge/Sidekiq-Background_Jobs-B91C1C.svg?logo=sidekiq&logoColor=white)](https://sidekiq.org)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?logo=tailwind-css&logoColor=white)](https://tailwindcss.com)
+[![Hotwire](https://img.shields.io/badge/Hotwire-Turbo%20%26%20Stimulus-F3B01C.svg)](https://hotwired.dev)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 **Syncretica** is an open-source digital humanities and computational research platform designed for **theologians**, **comparative religionists**, **archaeologists**, and **mythologists**. It enables scholars to systematically map, cluster, and synthesize syncretic archetypes, structural *mythemes*, and cross-cultural religious parallels across world pantheons using **1024-dimensional semantic vector embeddings (`pgvector`)**, **graph-theoretic connected components**, and **multi-stage AI synthesis pipelines**.
 
@@ -8,13 +23,13 @@
 
 For over a century, comparative religion and historical archaeology have grappled with a foundational methodological tension: how can scholars compare thousands of deities, ritual epithets, and mythological narratives across global traditions without either losing local cultural specificity or succumbing to cherry-picked, anecdotal parallels?
 
-Classical structuralist and comparative frameworks—such as **Claude Lévi-Strauss's** structural decomposition of myths into constituent bundles of relations (*mythemes*), **Georges Dumézil's** trifunctional hypothesis of sovereignty, martial force, and fertility, **Mircea Eliade's** morphology of the sacred (*hierophanies*), and archaeological models of **trans-regional trade syncretism (*interpretatio*)**—offered profound theoretical lenses, yet were historically constrained by the human limits of manual corpus indexing.
+Classical structuralist and comparative frameworks (such as **Claude Lévi-Strauss's** structural decomposition of myths into constituent bundles of relations (*mythemes*), **Georges Dumézil's** trifunctional hypothesis of sovereignty, martial force, and fertility, **Mircea Eliade's** morphology of the sacred (*hierophanies*), and archaeological models of **trans-regional trade syncretism (*interpretatio*)**) offered profound theoretical lenses, yet were historically constrained by the human limits of manual corpus indexing.
 
 **Syncretica** operationalizes these comparative frameworks in a transparent, reproducible, and locally hosted computational laboratory:
 
 1. **Multi-Tier Corpus Construction**: Automated scholarly discovery agents populate a structured relational catalog of global **Pantheons**, **Deities (`God`)**, thematic domain tags, and 8–10 decomposed **Mythological Themes (`Myth`)** per deity.
 2. **High-Dimensional Semantic Manifold**: Every deity profile and mythological theme bundle is projected into a **1024-dimensional vector space** indexed via PostgreSQL `pgvector` HNSW (`vector_cosine_ops`), allowing empirical measurement of semantic proximity across disparate cultures.
-3. **Multi-Granularity Empirical Clustering & Snapshotting**: Researchers interactively tune cosine distance thresholds across **15 granularity levels**—from strict historical twins (*Level 1, $\le 0.16$*) to zero-singleton **100% Full Catalog Coverage** (*Level 15*) via a two-stage core-and-absorption algorithm that prevents single-linkage megacluster collapse—and freeze states into immutable **Cluster Snapshots**.
+3. **Multi-Granularity Empirical Clustering & Snapshotting**: Researchers interactively tune cosine distance thresholds across **15 granularity levels** (from strict historical twins at *Level 1, $\le 0.16$* to zero-singleton **100% Full Catalog Coverage** at *Level 15* via a two-stage core-and-absorption algorithm that prevents single-linkage megacluster collapse) and freeze states into immutable **Cluster Snapshots**.
 4. **Map-Reduce & Hierarchical Deep Synthesis Reports**: Rather than relying on shallow single-prompt summaries, Syncretica executes a **2-Phase Map-Reduce** or **3-Phase Hierarchical Deep Synthesis** workflow over saved snapshots, inspecting every cluster through the scholar's specific research inquiry and grounding every claim in cited cluster numbers, deities, and pantheons.
 
 ---
@@ -43,7 +58,7 @@ Classical structuralist and comparative frameworks—such as **Claude Lévi-Stra
 
 ## 1. Why Install Syncretica? Dual Disciplinary Research Tracks
 
-Syncretica runs 100% locally on your workstation using open-weights language and embedding models via Ollama and PostgreSQL `pgvector`. There are no proprietary API paywalls, rate limits, or opaque cloud mutations—making your empirical snapshots and synthesized monographs reproducible and auditable.
+Syncretica runs 100% locally on your workstation using open-weights language and embedding models via Ollama and PostgreSQL `pgvector`. There are no proprietary API paywalls, rate limits, or opaque cloud mutations, making your empirical snapshots and synthesized monographs reproducible and auditable.
 
 ### 1.1 For Theologians & Comparative Religionists
 
@@ -61,7 +76,7 @@ Theological and history-of-religions inquiry often examines how diverse civiliza
 
 ### 1.2 For Archaeologists & Material Culture Specialists
 
-Archaeologists frequently confront fragmentary material evidence—unlabeled votive reliefs, syncretic frontier inscriptions, cylinder seals, or newly excavated cultic assemblages—where the functional identity or trans-regional affiliation of a local deity is contested:
+Archaeologists frequently confront fragmentary material evidence (such as unlabeled votive reliefs, syncretic frontier inscriptions, cylinder seals, or newly excavated cultic assemblages) where the functional identity or trans-regional affiliation of a local deity is contested:
 
 - **Contextualizing Regional & Frontier Cults (*Interpretatio*)**: By sweeping the `/clusters` granularity slider from **Level 1 (`0.16`)** to **Level 8 (`0.23`)**, archaeologists can observe exactly when a regional deity (e.g., Etruscan *Tinia*, Gallo-Roman *Taranis*, Thracian or Anatolian figures) merges into a broader Mediterranean or Near Eastern semantic cluster.
 - **Cultural Diffusion vs. Independent Cognitive Convergence**:
@@ -71,7 +86,7 @@ Archaeologists frequently confront fragmentary material evidence—unlabeled vot
 
 > [!TIP]
 > **Sample Archaeological Research Inquiries (Copy & Paste into a Snapshot Report):**
-> - *"Compare clusters containing Bronze Age Near Eastern, Anatolian, and Aegean deities (Mesopotamian, Canaanite, Hittite, Minoan/Mycenaean, Greek, Egyptian). Which functional domains—metallurgy, maritime storm, sacred kingship, or threshold warfare—show the tightest vector clustering indicative of Eastern Mediterranean trade-route syncretism?"*
+> - *"Compare clusters containing Bronze Age Near Eastern, Anatolian, and Aegean deities (Mesopotamian, Canaanite, Hittite, Minoan/Mycenaean, Greek, Egyptian). Which functional domains, such as metallurgy, maritime storm, sacred kingship, or threshold warfare, show the tightest vector clustering indicative of Eastern Mediterranean trade-route syncretism?"*
 > - *"Identify cross-continental clusters where Mesoamerican/Andean deities group tightly with Old World counterparts. Analyze whether these convergences center on shared ecological/subsistence substrates (maize/grain cycles, solar calendars, obsidian/metallurgical craft) or funerary stratification."*
 > - *"Isolate the peripheral singletons absorbed at Granularity Levels 11–15. Which localized cult figures or specialized tutelary spirits resist assimilation into dominant pan-regional archetypes, and what material or ecological niches do they occupy?"*
 
@@ -138,13 +153,13 @@ flowchart TD
 ```
 
 1. **2-Phase Standard Comparative Report (Map-Reduce)**:
-   - **Phase 1 — Inquiry-Guided Cluster Analysis (Map)**: `ClusterGroupSummaryAgent` iterates through every `ClusterGroup` in the snapshot, inspecting its full member descriptions, pantheons, and themes specifically through the lens of the researcher's prompt, persisting each analysis as a `ClusterReportSummary`.
-   - **Phase 2 — Cross-Cluster Synthesis (Reduce)**: `ClusterReportAgent` synthesizes the per-cluster findings into a structured comparative report complete with executive summary, explicit citations of cluster numbers (`Cluster #1`, `Cluster #12`), named deities/pantheons, structural outliers, and theoretical conclusions.
+   - **Phase 1: Inquiry-Guided Cluster Analysis (Map)**: `ClusterGroupSummaryAgent` iterates through every `ClusterGroup` in the snapshot, inspecting its full member descriptions, pantheons, and themes specifically through the lens of the researcher's prompt, persisting each analysis as a `ClusterReportSummary`.
+   - **Phase 2: Cross-Cluster Synthesis (Reduce)**: `ClusterReportAgent` synthesizes the per-cluster findings into a structured comparative report complete with executive summary, explicit citations of cluster numbers (`Cluster #1`, `Cluster #12`), named deities/pantheons, structural outliers, and theoretical conclusions.
 2. **3-Phase Hierarchical Detailed Report (Deep Synthesis)**:
    - Designed for exhaustive, monograph-scale investigations where compressing $140+$ clusters in a single final pass would truncate nuanced regional evidence.
    - **Phase 1 Reuse Optimization**: When launched from an existing completed report (`POST /reports/:id/deep_synthesis`), Syncretica **copies and reuses** all Phase 1 `ClusterReportSummary` records (`ClusterReport#copy_summaries_from!`), advancing immediately to Phase 2 without redundant LLM inference.
-   - **Phase 2 — Mid-Level Batch Aggregation**: `ClusterBatchSummaryAgent` partitions the ordered cluster summaries into batches of configurable size (`batch_size` $2\text{--}50$, default $5$) and synthesizes each slice into a detailed intermediate narrative (`ClusterSubReport`).
-   - **Phase 3 — Deep Monograph Synthesis**: `DeepSynthesisReportAgent` expands the batch-level narratives into a comprehensive, long-form scholarly study, maintaining a bidirectional link to its parent report.
+   - **Phase 2: Mid-Level Batch Aggregation**: `ClusterBatchSummaryAgent` partitions the ordered cluster summaries into batches of configurable size (`batch_size` $2\text{--}50$, default $5$) and synthesizes each slice into a detailed intermediate narrative (`ClusterSubReport`).
+   - **Phase 3: Deep Monograph Synthesis**: `DeepSynthesisReportAgent` expands the batch-level narratives into a comprehensive, long-form scholarly study, maintaining a bidirectional link to its parent report.
 
 ---
 
@@ -384,7 +399,7 @@ Once your local server is running at `http://localhost:3000`, follow this four-s
 3. **Explore Semantic Clusters & Capture an Empirical Snapshot (`/clusters`)**:
    - Open **Clusters** (`/clusters`) and select either **Gods** or **Myths**.
    - Drag the **Granularity Slider** between **Level 1** (Strict Twins) and **Level 15** (100% Full Coverage / 0 Singletons) to observe how archetypes coalesce across cultures. Click any deity or myth badge to inspect its full description, domains, and mythemes in an in-page modal.
-   - Enter a descriptive title (e.g., *"Full-Coverage Global Mytheme Partition — Level 15"*) and click **Save Snapshot**.
+   - Enter a descriptive title (e.g., *"Full-Coverage Global Mytheme Partition (Level 15)"*) and click **Save Snapshot**.
 4. **Synthesize Comparative & Hierarchical Deep Reports (`/cluster_snapshots` $\rightarrow$ `/reports`)**:
    - On your saved snapshot page, enter a theological or archaeological research inquiry (or choose a preset lens) and click **Generate Report** to launch the **2-Phase Map-Reduce** analysis. Watch real-time progress via Turbo Streams as each cluster is analyzed.
    - Once completed, review the synthesized report on `/reports/:id`. To expand the investigation into an exhaustive monograph without re-running Phase 1 cluster analyses, choose a batch size ($2\text{--}50$, default $5$) and click **Generate Detailed Report** to execute the **3-Phase Hierarchical Deep Synthesis**.
