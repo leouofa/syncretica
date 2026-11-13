@@ -40,7 +40,29 @@
     <div class="text-slate-800 text-sm font-medium">&ldquo;<%= @report.prompt %>&rdquo;</div>
   </div>
 
-  <% if @report.completed? && !@report.detailed? %>
+  <% if @report.detailed? && @report.parent_report.present? %>
+    <!-- Detailed Synthesis Source Banner -->
+    <div class="rounded-xl border border-violet-200 bg-violet-50/40 p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div class="space-y-1">
+        <div class="flex items-center gap-2">
+          <h2 class="text-sm font-bold uppercase tracking-wider text-violet-900">Detailed Synthesis Variation</h2>
+          <% if @report.batch_size.present? %>
+            <span class="inline-flex items-center rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-violet-800">
+              <%= @report.batch_size %> clusters/batch
+            </span>
+          <% end %>
+        </div>
+        <p class="text-xs text-slate-600">
+          This deep report synthesizes per-cluster analyses from <strong><%= @report.parent_report.title %></strong>.
+          To generate another detailed variation with different batch settings, visit the source report.
+        </p>
+      </div>
+
+      <div class="shrink-0">
+        <%= link_to "View Source Report", cluster_report_path(@report.parent_report), class: "inline-flex items-center rounded-lg bg-violet-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-violet-500 transition cursor-pointer whitespace-nowrap" %>
+      </div>
+    </div>
+  <% elsif @report.completed? && !@report.detailed? %>
     <!-- Hierarchical Detailed Synthesis -->
     <div class="rounded-xl border border-violet-200 bg-violet-50/40 p-5 space-y-3">
       <div>

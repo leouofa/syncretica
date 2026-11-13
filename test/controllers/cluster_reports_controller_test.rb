@@ -112,18 +112,36 @@ class ClusterReportsControllerTest < ActionDispatch::IntegrationTest
     assert_equal ClusterReport::DEFAULT_BATCH_SIZE, ClusterReport.last.batch_size
   end
 
-  test "should render a detailed report with batch analyses and without detailed synthesis generation form" do
+  test "should render a detailed report with batch analyses, source banner, and without generation form" do
+    parent = @report
     group = @snapshot.cluster_groups.create!(name: "Solar Realm", shared_themes: [ "sun" ], size: 1)
-    @report.update!(is_detailed: true, batch_size: 5)
-    @report.cluster_report_summaries.create!(cluster_group: group, position: 1, content: "Cluster analysis")
-    @report.cluster_sub_reports.create!(batch_index: 1, cluster_group_ids: [ group.id ], content: "Batch narrative")
+    detailed_report = @snapshot.cluster_reports.create!(
+      prompt: parent.prompt,
+      status: "completed",
+      is_detailed: true,
+      batch_size: 5,
+      parent_report: parent,
+      content: "# Detailed Patterns\nBatch synthesis content."
+    )
+    detailed_report.cluster_report_summaries.create!(cluster_group: group, position: 1, content: "Cluster analysis")
+    detailed_report.cluster_sub_reports.create!(batch_index: 1, cluster_group_ids: [ group.id ], content: "Batch narrative")
 
-    get cluster_report_url(@report)
+    get cluster_report_url(detailed_report)
     assert_response :success
     assert_includes response.body, "Batch Analyses"
     assert_includes response.body, "Batch #1"
+    assert_includes response.body, "Detailed Synthesis Variation"
+    assert_includes response.body, "View Source Report"
+    assert_select "a[href=?]", cluster_report_path(parent), text: "View Source Report"
     assert_not_includes response.body, "Generate Detailed Report"
-    assert_not_includes response.body, "Detailed Synthesis"
+  end
+
+  test "should render detailed synthesis generation form on completed base report" do
+    get cluster_report_url(@report)
+    assert_response :success
+    assert_includes response.body, "Detailed Synthesis"
+    assert_includes response.body, "Generate Detailed Report"
+    assert_select "button", text: /Generate Detailed Report/
   end
 
   test "deep synthesis cannot be run from an already detailed report" do
