@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 Rails.application.routes.draw do
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
@@ -9,10 +11,6 @@ Rails.application.routes.draw do
     require "sidekiq/web"
     mount Sidekiq::Web => "/sidekiq"
   end
-
-  # Render dynamic PWA files from app/views/pwa/* (remember to link manifest in application.html.erb)
-  # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
-  # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
   # Defines the root path route ("/")
   root "pages#home"
@@ -48,5 +46,81 @@ Rails.application.routes.draw do
   resource :settings, only: [ :show ] do
     post :generate_embeddings, on: :collection
     patch :update_context_window, on: :collection
+  end
+
+  # ==========================================
+  # Programmatic REST API (v1)
+  # ==========================================
+  namespace :api, defaults: { format: :json } do
+    namespace :v1 do
+      get "status" => "status#show"
+      get "openapi" => "openapi#show", as: :openapi_spec
+      get "search" => "search#index"
+
+      resources :pantheons do
+        collection do
+          post :upsert_batch
+          post :populate
+        end
+        member do
+          post :populate_gods
+        end
+      end
+
+      resources :gods do
+        collection do
+          get :search
+          post :upsert_batch
+          post :populate
+        end
+        member do
+          get :neighbors
+          post :generate_embedding
+          post :populate_myth
+        end
+      end
+
+      resources :myths do
+        collection do
+          get :search
+          post :populate
+        end
+        member do
+          get :neighbors
+          post :generate_embedding
+        end
+      end
+
+      resources :clusters, only: [ :index ] do
+        collection do
+          post :snapshot
+        end
+      end
+
+      resources :cluster_snapshots, only: [ :index, :show, :create, :destroy ] do
+        resources :cluster_groups, only: [ :index ]
+        resources :cluster_reports, only: [ :create ]
+      end
+
+      resources :cluster_groups, only: [ :show ]
+
+      resources :cluster_reports, only: [ :index, :show, :create, :destroy ] do
+        member do
+          post :deep_synthesis
+        end
+        resources :summaries, controller: :cluster_report_summaries, only: [ :index ]
+        resources :sub_reports, controller: :cluster_sub_reports, only: [ :index ]
+      end
+
+      resources :cluster_report_summaries, only: [ :show ]
+      resources :cluster_sub_reports, only: [ :show ]
+
+      resources :jobs, only: [ :index, :show ]
+
+      resource :settings, only: [ :show ] do
+        patch :context_window, action: :update_context_window
+        post :generate_embeddings
+      end
+    end
   end
 end

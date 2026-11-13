@@ -23,6 +23,8 @@ class GenerateEmbeddingJob < ApplicationJob
 
     record = model_class.find(record_id)
 
+    track_progress(message: "Generating embedding with #{Llm::EmbeddingGenerator.configured_model}...")
+
     broadcast_panel(
       record,
       running: true,
@@ -32,6 +34,11 @@ class GenerateEmbeddingJob < ApplicationJob
 
     record.generate_embedding!
 
+    track_completed(
+      message: "Embedding generated (#{record.embedding_model}).",
+      result: { record_type: record_type, record_id: record.id, model: record.embedding_model, embedded_at: record.embedded_at }
+    )
+
     broadcast_panel(
       record,
       running: false,
@@ -40,15 +47,21 @@ class GenerateEmbeddingJob < ApplicationJob
     )
   rescue StandardError => e
     Rails.logger.error("[GenerateEmbeddingJob] #{record_type}##{record_id} #{e.class}: #{e.message}")
+    track_failed(error: e, message: "Failed to generate embedding: #{e.message}")
     broadcast_panel(
       record,
       running: false,
       status_message: "Failed to generate embedding: #{e.message}",
       status_kind: :error
     ) if record
+    raise e if Rails.env.test? && !called_via_perform_later?
   end
 
   private
+
+  def called_via_perform_later?
+    job_id.present?
+  end
 
   def broadcast_panel(record, running:, status_message:, status_kind:)
     Turbo::StreamsChannel.broadcast_replace_to(

@@ -6,57 +6,53 @@ class PopulateMythsJob < ApplicationJob
   queue_as :default
   sidekiq_options retry: 0
 
-  def perform
+  def perform(god_id: nil)
     Llm::ModelRegistry.ensure_configured_model!
 
-    gods = God.includes(:pantheon).joins(:pantheon).order("pantheons.name ASC, gods.name ASC").to_a
+    gods = if god_id.present?
+             God.where(id: god_id).includes(:pantheon).to_a
+    else
+             God.includes(:pantheon).joins(:pantheon).order("pantheons.name ASC, gods.name ASC").to_a
+    end
+
     if gods.empty?
+      msg = god_id.present? ? "God with ID #{god_id} not found." : "No gods found. Populate gods first before discovering myths."
+      track_failed(error: msg, message: msg)
       broadcast_state(
-        status_message: "No gods found. Populate gods first before discovering myths.",
+        status_message: msg,
         status_kind: :error,
         running: false
       )
-      return
+      return { total_upserted: 0, failed_gods: [] }
     end
 
     total_upserted, failed_gods = populate_across_gods(gods)
     summary = build_summary(total_upserted: total_upserted, total_gods: gods.size, failed_gods: failed_gods)
+
+    if failed_gods.size == gods.size
+      track_failed(error: summary[:message], message: summary[:message])
+    else
+      track_completed(
+        message: summary[:message],
+        result: { total_upserted: total_upserted, total_myths: Myth.count, failed_gods: failed_gods }
+      )
+    end
 
     broadcast_state(
       status_message: summary[:message],
       status_kind: summary[:kind],
       running: false
     )
+
+    { total_upserted: total_upserted, failed_gods: failed_gods }
   rescue StandardError => e
     Rails.logger.error("[PopulateMythsJob] #{e.class}: #{e.message}")
+    track_failed(error: e, message: "Failed to populate myths: #{e.message}")
     broadcast_state(
       status_message: "Failed to populate myths: #{e.message}",
       status_kind: :error,
       running: false
     )
-  end
-
-  private
-
-  def populate_across_gods(gods)
-    total_upserted = 0
-    failed_gods = []
-
-    gods.each_with_index do |god, index|
-      broadcast_state(
-        status_message: "Discovering myths for #{god.name} (#{index + 1}/#{gods.size})...",
-        status_kind: :info,
-        running: true
-      )
-
-      populate_god!(god)
-      total_upserted += 1
-    rescue StandardError => e
-      Rails.logger.error("[PopulateMythsJob] God=#{god.name} #{e.class}: #{e.message}")
-      failed_gods << god.name
-    end
-
-    [ total_upserted, failed_gods ]
   end
 
   def populate_god!(god)
@@ -73,6 +69,31 @@ class PopulateMythsJob < ApplicationJob
     raise "LLM response did not contain any valid mythical themes for #{god.name}." if normalized.empty?
 
     Myth.upsert_for_god!(god, normalized)
+  end
+
+  private
+
+  def populate_across_gods(gods)
+    total_upserted = 0
+    failed_gods = []
+
+    gods.each_with_index do |god, index|
+      msg = "Discovering myths for #{god.name} (#{index + 1}/#{gods.size})..."
+      track_progress(message: msg, progress: { current: index + 1, total: gods.size, god: god.name })
+      broadcast_state(
+        status_message: msg,
+        status_kind: :info,
+        running: true
+      )
+
+      populate_god!(god)
+      total_upserted += 1
+    rescue StandardError => e
+      Rails.logger.error("[PopulateMythsJob] God=#{god.name} #{e.class}: #{e.message}")
+      failed_gods << god.name
+    end
+
+    [ total_upserted, failed_gods ]
   end
 
   def discovery_prompt_for(god)

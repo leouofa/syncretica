@@ -18,21 +18,31 @@ class PopulatePantheonsJob < ApplicationJob
     upserted = Pantheon.upsert_batch!(entries)
     raise "LLM response did not contain any valid pantheons." if upserted.empty?
 
+    message = "Upserted #{upserted.size} #{'pantheon'.pluralize(upserted.size)} (#{Pantheon.count} total)."
+    track_completed(message: message, result: { upserted_count: upserted.size, total_count: Pantheon.count })
+
     broadcast_state(
-      status_message: "Upserted #{upserted.size} #{'pantheon'.pluralize(upserted.size)} (#{Pantheon.count} total).",
+      status_message: message,
       status_kind: :success,
       running: false
     )
+    { upserted_count: upserted.size, total_count: Pantheon.count }
   rescue StandardError => e
     Rails.logger.error("[PopulatePantheonsJob] #{e.class}: #{e.message}")
+    track_failed(error: e, message: "Failed to populate pantheons: #{e.message}")
     broadcast_state(
       status_message: "Failed to populate pantheons: #{e.message}",
       status_kind: :error,
       running: false
     )
+    raise e if Rails.env.test? && !called_via_perform_later?
   end
 
   private
+
+  def called_via_perform_later?
+    job_id.present?
+  end
 
   def extract_pantheons(response)
     Llm::JsonResponseParser.extract_list(response, key: "pantheons")

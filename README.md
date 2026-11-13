@@ -52,7 +52,8 @@ Classical structuralist and comparative frameworks (such as **Claude Lévi-Strau
    - [Programmatic Snapshot Persistence & ActiveRecord Queries](#35-programmatic-snapshot-persistence--activerecord-queries)
 4. [Installation & Local Laboratory Setup for Researchers](#4-installation--local-laboratory-setup-for-researchers)
 5. [Your First Cross-Cultural Investigation (4-Step Lab Walkthrough)](#5-your-first-cross-cultural-investigation-4-step-lab-walkthrough)
-6. [Open Science, Reproducibility, Testing & Academic Citation](#6-open-science-reproducibility-testing--academic-citation)
+6. [Programmatic REST API (`/api/v1`) & MCP Server Integration](#6-programmatic-rest-api-apiv1--mcp-server-integration)
+7. [Open Science, Reproducibility, Testing & Academic Citation](#7-open-science-reproducibility-testing--academic-citation)
 
 ---
 
@@ -406,7 +407,35 @@ Once your local server is running at `http://localhost:3000`, follow this four-s
 
 ---
 
-## 6. Open Science, Reproducibility, Testing & Academic Citation
+## 6. Programmatic REST API (`/api/v1`) & MCP Server Integration
+
+Syncretica exposes a full JSON REST API under `/api/v1` accompanied by a native **OpenAPI 3.1 specification** (`GET /api/v1/openapi.json`), designed to be consumed by external applications, automated research agents, and companion **Model Context Protocol (MCP)** servers.
+
+```mermaid
+flowchart LR
+    MCP["TypeScript MCP Server / External Agent"] <--> API["Syncretica /api/v1"]
+    API <--> DB["PostgreSQL 16 + pgvector"]
+    API <--> LLM["Local Ollama Inference"]
+```
+
+### Core API Capabilities
+- **Platform Health & Introspection**: `GET /api/v1/status` and `GET /api/v1/openapi.json`.
+- **Global Cross-Resource Search**: `GET /api/v1/search?q=...&mode=semantic|keyword`.
+- **Pantheons**: Full CRUD, batch upsert, and LLM discovery triggers (`/api/v1/pantheons`).
+- **Deities (`God`)**: CRUD, batch upsert, theme/pantheon filtering, semantic vector search, nearest-neighbor similarity (`/api/v1/gods/:id/neighbors`), and embedding generation.
+- **Mythological Themes (`Myth`)**: CRUD, proposition search, nearest structural neighbors, and embedding generation (`/api/v1/myths`).
+- **Clustering & Snapshots**: On-the-fly live cluster calculation (`GET /api/v1/clusters`) and snapshot creation/inspection (`/api/v1/cluster_snapshots`, `/api/v1/cluster_groups`).
+- **Multi-Stage Synthesis Reports**: Initiate 2-Phase Map-Reduce and 3-Phase Hierarchical Deep Synthesis monographs (`/api/v1/cluster_reports`), with granular access to Phase 1 cluster summaries and Phase 2 batch sub-reports.
+- **Job Status Tracking**: Inspect and poll async background discovery and embedding jobs (`GET /api/v1/jobs/:id`) or execute single-record actions synchronously via `?sync=true`.
+- **LLM Settings**: Dynamically inspect and tune the model context window and embedding generation (`/api/v1/settings`).
+
+For detailed documentation, request/response JSON schemas, and TypeScript MCP integration code examples, see the complete guide:
+
+👉 **[REST API Reference Manual (`docs/api.md`)](docs/api.md)**
+
+---
+
+## 7. Open Science, Reproducibility, Testing & Academic Citation
 
 ### Auditability & Provenance
 Unlike black-box chat interfaces, Syncretica persists the complete provenance chain of every empirical run in PostgreSQL:

@@ -31,12 +31,19 @@ class GenerateAllEmbeddingsJob < ApplicationJob
 
     if records.empty?
       message = model_class.none? ? "No #{model_type.downcase.pluralize} found." : "All #{model_type.downcase.pluralize} already have embeddings."
+      track_completed(message: message, result: { succeeded: 0, failed: 0, total_targeted: 0 })
       broadcast_section(model_type, model_class, running: false, status_message: message, status_kind: :info)
-      return
+      return { succeeded: 0, failed: 0, total_targeted: 0 }
     end
 
     succeeded, failed = embed_records(model_type, model_class, records, only_missing:)
     summary = build_summary(model_type, succeeded:, failed:, total_targeted: records.size)
+
+    if failed == records.size
+      track_failed(error: summary[:message], message: summary[:message])
+    else
+      track_completed(message: summary[:message], result: { succeeded: succeeded, failed: failed, total_targeted: records.size })
+    end
 
     broadcast_section(
       model_type,
@@ -45,8 +52,11 @@ class GenerateAllEmbeddingsJob < ApplicationJob
       status_message: summary[:message],
       status_kind: summary[:kind]
     )
+
+    { succeeded: succeeded, failed: failed, total_targeted: records.size }
   rescue StandardError => e
     Rails.logger.error("[GenerateAllEmbeddingsJob] #{model_type} #{e.class}: #{e.message}")
+    track_failed(error: e, message: "Failed to generate #{model_type.downcase} embeddings: #{e.message}")
     if config
       broadcast_section(
         model_type,
@@ -66,12 +76,14 @@ class GenerateAllEmbeddingsJob < ApplicationJob
     label = model_type.downcase
 
     records.each_with_index do |record, index|
+      msg = "Generating #{label} embeddings (#{index + 1}/#{records.size})..."
+      track_progress(message: msg, progress: { current: index + 1, total: records.size, model_type: model_type })
       broadcast_section(
         model_type,
         model_class,
         running: true,
         running_mode: only_missing ? :missing : :all,
-        status_message: "Generating #{label} embeddings (#{index + 1}/#{records.size})...",
+        status_message: msg,
         status_kind: :info
       )
 

@@ -6,56 +6,53 @@ class PopulateGodsJob < ApplicationJob
   queue_as :default
   sidekiq_options retry: 0
 
-  def perform
+  def perform(pantheon_id: nil)
     Llm::ModelRegistry.ensure_configured_model!
 
-    pantheons = Pantheon.ordered.to_a
+    pantheons = if pantheon_id.present?
+                  Pantheon.where(id: pantheon_id).to_a
+    else
+                  Pantheon.ordered.to_a
+    end
+
     if pantheons.empty?
+      msg = pantheon_id.present? ? "Pantheon with ID #{pantheon_id} not found." : "No pantheons found. Populate pantheons first before discovering gods."
+      track_failed(error: msg, message: msg)
       broadcast_state(
-        status_message: "No pantheons found. Populate pantheons first before discovering gods.",
+        status_message: msg,
         status_kind: :error,
         running: false
       )
-      return
+      return { total_upserted: 0, failed_pantheons: [] }
     end
 
     total_upserted, failed_pantheons = populate_across_pantheons(pantheons)
     summary = build_summary(total_upserted: total_upserted, total_pantheons: pantheons.size, failed_pantheons: failed_pantheons)
+
+    if failed_pantheons.size == pantheons.size
+      track_failed(error: summary[:message], message: summary[:message])
+    else
+      track_completed(
+        message: summary[:message],
+        result: { total_upserted: total_upserted, total_gods: God.count, failed_pantheons: failed_pantheons }
+      )
+    end
 
     broadcast_state(
       status_message: summary[:message],
       status_kind: summary[:kind],
       running: false
     )
+
+    { total_upserted: total_upserted, failed_pantheons: failed_pantheons }
   rescue StandardError => e
     Rails.logger.error("[PopulateGodsJob] #{e.class}: #{e.message}")
+    track_failed(error: e, message: "Failed to populate gods: #{e.message}")
     broadcast_state(
       status_message: "Failed to populate gods: #{e.message}",
       status_kind: :error,
       running: false
     )
-  end
-
-  private
-
-  def populate_across_pantheons(pantheons)
-    total_upserted = 0
-    failed_pantheons = []
-
-    pantheons.each_with_index do |pantheon, index|
-      broadcast_state(
-        status_message: "Discovering gods for #{pantheon.name} (#{index + 1}/#{pantheons.size})...",
-        status_kind: :info,
-        running: true
-      )
-
-      total_upserted += populate_pantheon!(pantheon)
-    rescue StandardError => e
-      Rails.logger.error("[PopulateGodsJob] Pantheon=#{pantheon.name} #{e.class}: #{e.message}")
-      failed_pantheons << pantheon.name
-    end
-
-    [ total_upserted, failed_pantheons ]
   end
 
   def populate_pantheon!(pantheon)
@@ -72,6 +69,30 @@ class PopulateGodsJob < ApplicationJob
     raise "LLM response did not contain any valid gods for #{pantheon.name}." if upserted.empty?
 
     upserted.size
+  end
+
+  private
+
+  def populate_across_pantheons(pantheons)
+    total_upserted = 0
+    failed_pantheons = []
+
+    pantheons.each_with_index do |pantheon, index|
+      msg = "Discovering gods for #{pantheon.name} (#{index + 1}/#{pantheons.size})..."
+      track_progress(message: msg, progress: { current: index + 1, total: pantheons.size, pantheon: pantheon.name })
+      broadcast_state(
+        status_message: msg,
+        status_kind: :info,
+        running: true
+      )
+
+      total_upserted += populate_pantheon!(pantheon)
+    rescue StandardError => e
+      Rails.logger.error("[PopulateGodsJob] Pantheon=#{pantheon.name} #{e.class}: #{e.message}")
+      failed_pantheons << pantheon.name
+    end
+
+    [ total_upserted, failed_pantheons ]
   end
 
   def discovery_prompt_for(pantheon)
