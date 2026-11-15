@@ -110,7 +110,7 @@ OLLAMA_MODEL=Qwen3.6-35B-A3B-NVFP4
 ```
 
 If you run Ollama on another workstation over Tailscale, point `OLLAMA_API_BASE`
-to its Tailscale IP directly (e.g. `http://100.95.26.48:1919/v1`).
+to its Tailscale IP directly (e.g. `http://<remote-tailscale-ip>:11434/v1`).
 
 ### Accessing over Tailscale and other devices
 
@@ -119,12 +119,11 @@ to permit:
 - Any Tailscale CGNAT IPv4 address (`100.64.0.0/10`)
 - Any Tailscale IPv6 address (`fd7a:115c:a1e0::/48`)
 - Tailscale MagicDNS hostnames (`*.ts.net`)
-- Local network hostnames (e.g. `mbpro`)
+- Local network hostnames
 
 You can access Syncretica from any device on your Tailscale network:
 ```sh
 http://<your-tailscale-ip>:3002
-# e.g.: http://100.109.198.36:3002 or http://mbpro:3002
 ```
 
 For custom external domains (such as ngrok or Cloudflare tunnels), set
