@@ -77,7 +77,7 @@ Rails.application.configure do
   # Allow requests from Tailscale IP ranges, MagicDNS hostnames, and custom development hosts
   config.hosts << IPAddr.new("100.64.0.0/10")
   config.hosts << IPAddr.new("fd7a:115c:a1e0::/48")
-  config.hosts << /[a-z0-9-]+\.ts\.net/
+  config.hosts << /(?:[a-z0-9-]+\.)+ts\.net/i
   config.hosts << /^[a-z0-9_-]+$/i
   if ENV["RAILS_DEVELOPMENT_HOSTS"].present?
     ENV["RAILS_DEVELOPMENT_HOSTS"].split(",").map(&:strip).each do |host|
