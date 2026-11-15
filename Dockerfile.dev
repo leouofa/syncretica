@@ -1,0 +1,66 @@
+# syntax=docker/dockerfile:1
+
+# Development image. The production image is the default Dockerfile; see docs/DOCKER.md.
+#
+#   docker compose build
+#   docker compose up -d
+#
+# Unlike the production image this one keeps the development and test gems and
+# skips asset precompilation, so the Tailwind watcher can rebuild CSS on the fly.
+# compose.yaml bind-mounts the working tree over /rails, so rebuilds are only
+# needed after Gemfile or config/boot changes.
+
+# Make sure RUBY_VERSION matches the Ruby version in .ruby-version
+ARG RUBY_VERSION=3.4.4
+FROM docker.io/library/ruby:$RUBY_VERSION-slim
+
+# Rails app lives here
+WORKDIR /rails
+
+# Runtime packages plus the toolchain needed to compile native gems. The
+# toolchain is dropped in the same layer to keep the image a single stage.
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y \
+      build-essential \
+      curl \
+      git \
+      libjemalloc2 \
+      libpq-dev \
+      libvips \
+      libyaml-dev \
+      pkg-config \
+      postgresql-client && \
+    ln -s /usr/lib/$(uname -m)-linux-gnu/libjemalloc.so.2 /usr/local/lib/libjemalloc.so && \
+    rm -rf /var/lib/apt/lists /var/cache/apt/archives
+
+# Development environment with the full bundle installed.
+# RAILS_ENV is deliberately left unset: Rails then defaults to development for
+# bin/rails, while the test suite can still set RAILS_ENV=test through the ||= in
+# test_helper.rb. Baking in "development" would run the specs against the
+# development database.
+# BUNDLE_PATH stays outside /rails so the bind mount never shadows the gems.
+ENV BUNDLE_PATH="/usr/local/bundle" \
+    LD_PRELOAD="/usr/local/lib/libjemalloc.so"
+
+COPY vendor/ ./vendor/
+COPY Gemfile Gemfile.lock ./
+
+# -j 1 disable parallel compilation to avoid a QEMU bug: https://github.com/rails/bootsnap/issues/495
+RUN bundle install -j 1
+
+# Application code. Shadowed by the bind mount at runtime, but it keeps the image
+# usable on its own and caches the bootsnap gem index.
+COPY . .
+
+# Run and own only the runtime files as a non-root user for security.
+# The uid is 1000 to match the default host user, so bind-mounted files stay writable.
+RUN groupadd --system --gid 1000 rails && \
+    useradd rails --uid 1000 --gid 1000 --create-home --shell /bin/bash
+USER 1000:1000
+
+# Entrypoint prepares the database when the server is the process being run.
+ENTRYPOINT ["/rails/bin/docker-entrypoint"]
+
+# BINDING must be set to 0.0.0.0 (see compose.yaml): in development Rails binds
+# to localhost only, which is unreachable from outside the container.
+CMD ["./bin/rails", "server"]

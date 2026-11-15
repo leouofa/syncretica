@@ -1,0 +1,125 @@
+# Development stack: Rails, Sidekiq background jobs, Tailwind watcher, Redis, and PostgreSQL (pgvector).
+# See docs/DOCKER.md.
+#
+#   docker compose up -d --build
+#   docker compose logs -f web
+#
+# The database lives in the named volume pg_data, so it survives restarts,
+# recreates, and rebuilds. Only `docker compose down -v` destroys it.
+
+name: syncretica
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: postgres
+      # Override by setting POSTGRES_PASSWORD in .env
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-syncretica}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    # Port 5432 is not published to avoid collision with a host PostgreSQL server.
+    # Uncomment and map to 5433 to inspect the database directly from the host:
+    # ports:
+    #   - "127.0.0.1:5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    # Port 6379 is not published to avoid collision with a host Redis server.
+    # Uncomment if needed on host:
+    # ports:
+    #   - "127.0.0.1:6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    # bin/docker-entrypoint runs db:prepare for this exact command, which
+    # creates and migrates the databases on first boot and is a no-op after.
+    command: ["./bin/rails", "server"]
+    environment:
+      # Rails binds to localhost in development, which is unreachable from
+      # outside the container.
+      BINDING: "0.0.0.0"
+      PORT: "3002"
+      PGHOST: db
+      PGUSER: postgres
+      PGPASSWORD: ${POSTGRES_PASSWORD:-syncretica}
+      REDIS_URL: redis://redis:6379/0
+      # Ollama connection: defaults to host gateway, overridden if set in .env
+      OLLAMA_API_BASE: ${OLLAMA_API_BASE:-http://host.docker.internal:11434/v1}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-Qwen3.6-35B-A3B-NVFP4}
+      # Comma-separated hostnames to allow besides localhost and IP addresses
+      # RAILS_DEVELOPMENT_HOSTS: your-domain.ngrok-free.app
+    volumes:
+      - .:/rails
+    ports:
+      - "3002:3002"
+    # Lets the container reach Ollama and other services running on the host.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:3002/up"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+
+  jobs:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: ["bin/jobs"]
+    environment:
+      PGHOST: db
+      PGUSER: postgres
+      PGPASSWORD: ${POSTGRES_PASSWORD:-syncretica}
+      REDIS_URL: redis://redis:6379/0
+      OLLAMA_API_BASE: ${OLLAMA_API_BASE:-http://host.docker.internal:11434/v1}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-Qwen3.6-35B-A3B-NVFP4}
+    volumes:
+      - .:/rails
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    # Waits for the web container, which is the one that runs db:prepare.
+    depends_on:
+      web:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  css:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    # The "always" argument puts Tailwind in polling mode. Without it the watcher
+    # builds once and exits, leaving this container in a restart loop. Note the
+    # rake argument syntax: the rails command runner rejects a bare "always".
+    command: ["bin/rails", "tailwindcss:watch[always]"]
+    volumes:
+      - .:/rails
+    restart: unless-stopped
+
+volumes:
+  pg_data:

@@ -299,6 +299,13 @@ end
 
 Syncretica is built with **Ruby on Rails 8.1**, **PostgreSQL (`pgvector`)**, **Redis / Sidekiq**, and **RubyLLM** connected to a local **Ollama** server. Follow the steps below to install the laboratory on macOS or Linux.
 
+> [!TIP]
+> **Prefer running with Docker?** You can run the entire development stack (Rails on port 3002, Sidekiq, Tailwind watcher, Redis, and PostgreSQL with pgvector) in Docker Compose:
+> ```sh
+> docker compose up -d --build
+> ```
+> See [docs/DOCKER.md](docs/DOCKER.md) for full details, Tailscale access, volume persistence, and everyday commands.
+
 ### Step 1: System Prerequisites
 
 Ensure the following services are installed and running on your workstation:
